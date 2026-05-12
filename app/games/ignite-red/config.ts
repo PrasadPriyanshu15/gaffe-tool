@@ -65,7 +65,7 @@ export const SCAT_OPTIONS: ScatType[] = [
   { key: "green",  label: "GREEN_SCATTER",  feature: "extra",  colorClass: "bg-green-600"  },
   { key: "red",    label: "RED_SCATTER",    feature: "double", colorClass: "bg-red-600"    },
   { key: "purple", label: "PURPLE_SCATTER", feature: "ultra",  colorClass: "bg-purple-600" },
-  { key: "all",    label: "ALL_SCATTER",    feature: "all",    colorClass: "bg-gradient-to-br from-blue-500 via-red-500 to-purple-500" },
+  { key: "all",    label: "FOUR_COLOR_SCATTER",    feature: "all",    colorClass: "bg-gradient-to-br from-blue-500 via-red-500 to-purple-500" },
 ];
 
 // All 4 individual features (for All-Scat expansion)
