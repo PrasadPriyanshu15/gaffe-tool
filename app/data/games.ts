@@ -1,9 +1,9 @@
 export const games = [
-  {
-    id: "triple-piggy-pays",
-    name: "Triple Piggy Pays",
-    path: "/games/triple-piggy-pays"
-  },
+  // {
+  //   id: "triple-piggy-pays",
+  //   name: "Triple Piggy Pays",
+  //   path: "/games/triple-piggy-pays"
+  // },
   {
     id: "game-2",
     name: "Game 2",
@@ -16,7 +16,7 @@ export const games = [
   },
     {
     id: "game-4",
-    name: "TPP",
+    name: "Triple Piggy pays",
     path: "/games/tpp"
   },
    {
