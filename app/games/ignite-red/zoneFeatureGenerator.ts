@@ -3,15 +3,15 @@
 
 // export const ZONE_COIN_COLORS = [
 //   { label: "Orange(4)",    value: 4  },
-//   { label: "Pink(9)",      value: 9  },
-//   { label: "Green(14)",    value: 14 },
-//   { label: "AllColor(19)", value: 19 },
+//   { label: "Pink(13)",      value: 13  },
+//   { label: "Green(22)",    value: 22 },
+//   { label: "AllColor(31)", value: 31 },
 // ];
 // export const ZONE_COIN_VALUES = ["1", "2", "5", "Minor", "Major", "Mini"];
 
 // export type ZoneFeatureCoin = {
 //   position:  number;   // 0–14 column-major (col*3+row)
-//   colorCode: number;   // 4 | 9 | 14 | 19
+//   colorCode: number;   // 4 | 13 | 22 | 31
 //   value:     string;
 //   fromBase?: boolean;
 // };
@@ -72,15 +72,15 @@ import { posToCol, posToRow } from "./config";
 
 export const ZONE_COIN_COLORS = [
   { label: "Orange(4)",    value: 4  },
-  { label: "Pink(9)",      value: 9  },
-  { label: "Green(14)",    value: 14 },
-  { label: "AllColor(19)", value: 19 },
+  { label: "Pink(13)",      value: 13  },
+  { label: "Green(22)",    value: 22 },
+  { label: "AllColor(31)", value: 31 },
 ];
 export const ZONE_COIN_VALUES = ["1", "2", "5", "MINOR", "MAJOR", "MINI"];
 
 export type ZoneFeatureCoin = {
   position:  number;   // 0–14 column-major (col*3+row)
-  colorCode: number;   // 4 | 9 | 14 | 19
+  colorCode: number;   // 4 | 13 | 22 | 31
   value:     string;
   fromBase?: boolean;
 };

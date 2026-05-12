@@ -20,7 +20,7 @@
 // const MAX_SPINS = 3;
 
 // const COIN_SELECT_BG: Record<number, string> = {
-//   4: "bg-purple-800", 9: "bg-blue-800", 14: "bg-emerald-800", 19: "bg-indigo-800",
+//   4: "bg-purple-800", 13: "bg-blue-800", 22: "bg-emerald-800", 31: "bg-indigo-800",
 // };
 
 // export default function UltraFeature({ baseCoins, isDoubleCombo, onCoinsChange, onSpin, onReset, onUpgrade }: Props) {
@@ -98,7 +98,7 @@
 //     onUpgrade(newFeatures, coins);
 //   };
 
-//   const filled14 = coins.length >= 14;
+//   const filled14 = coins.length >= 22;
 
 //   return (
 //     <div className="bg-gray-800 rounded-xl border border-purple-700">
@@ -106,7 +106,7 @@
 //         <div className="flex items-center gap-3">
 //           <h2 className="text-purple-400 font-bold font-mono">🟣 Ultra Feature</h2>
 //           {isDoubleCombo && <span className="text-xs bg-red-900 text-red-300 border border-red-700 px-2 py-0.5 rounded font-mono">+ Double</span>}
-//           {filled14 && <span className="text-yellow-400 text-xs font-mono bg-yellow-900/40 px-2 py-0.5 rounded border border-yellow-700">⚠ 14 filled → lastPositionReel</span>}
+//           {filled14 && <span className="text-yellow-400 text-xs font-mono bg-yellow-900/40 px-2 py-0.5 rounded border border-yellow-700">⚠ 22 filled → lastPositionReel</span>}
 //         </div>
 //         <span className="text-gray-500">{isOpen ? "▼" : "▶"}</span>
 //       </div>
@@ -270,7 +270,7 @@ type Props = {
 const MAX_SPINS = 3;
 
 const COIN_SELECT_BG: Record<number, string> = {
-  4: "bg-purple-800", 9: "bg-blue-800", 14: "bg-emerald-800", 19: "bg-indigo-800",
+  4: "bg-purple-800", 13: "bg-blue-800", 22: "bg-emerald-800", 31: "bg-indigo-800",
 };
 
 export default function UltraFeature({ baseCoins, isDoubleCombo, onCoinsChange, onSpin, onReset, onUpgrade }: Props) {
@@ -313,7 +313,7 @@ export default function UltraFeature({ baseCoins, isDoubleCombo, onCoinsChange, 
   };
 
   const upgradeCoinn = upgradePos !== null ? coinAt(upgradePos) : null;
-  const isAllColor   = upgradeCoinn?.colorCode === 19;
+  const isAllColor   = upgradeCoinn?.colorCode === 31;
 
   const upgradeOptions: string[] = (() => {
     if (!upgradeCoinn) return [];
@@ -363,7 +363,7 @@ export default function UltraFeature({ baseCoins, isDoubleCombo, onCoinsChange, 
     onUpgrade(newFeatures, coins);
   };
 
-  const filled14 = coins.length >= 14;
+  const filled14 = coins.length >= 22;
 
   return (
     <div className="bg-gray-800 rounded-xl border border-purple-700">
@@ -371,7 +371,7 @@ export default function UltraFeature({ baseCoins, isDoubleCombo, onCoinsChange, 
         <div className="flex items-center gap-3">
           <h2 className="text-purple-400 font-bold font-mono">🟣 Ultra Feature</h2>
           {isDoubleCombo && <span className="text-xs bg-red-900 text-red-300 border border-red-700 px-2 py-0.5 rounded font-mono">+ Double</span>}
-          {filled14 && <span className="text-yellow-400 text-xs font-mono bg-yellow-900/40 px-2 py-0.5 rounded border border-yellow-700">⚠ 14 filled → lastPositionReel</span>}
+          {filled14 && <span className="text-yellow-400 text-xs font-mono bg-yellow-900/40 px-2 py-0.5 rounded border border-yellow-700">⚠ 22 filled → lastPositionReel</span>}
         </div>
         <span className="text-gray-500">{isOpen ? "▼" : "▶"}</span>
       </div>

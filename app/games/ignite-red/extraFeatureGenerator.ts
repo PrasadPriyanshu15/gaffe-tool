@@ -3,9 +3,9 @@
 
 // export const EXTRA_COIN_COLORS = [
 //   { label: "Orange(4)",    value: 4  },
-//   { label: "Blue(9)",      value: 9  },
-//   { label: "Pink(14)",     value: 14 },
-//   { label: "AllColor(19)", value: 19 },
+//   { label: "Blue(13)",      value: 13  },
+//   { label: "Pink(22)",     value: 22 },
+//   { label: "AllColor(31)", value: 31 },
 // ];
 // export const EXTRA_COIN_VALUES = ["1", "2", "5", "Minor", "Major", "Mini"];
 
@@ -20,7 +20,7 @@
 
 // /**
 //  * Generate Extra Feature gaffe line.
-//  * Adds lastPositionReel:bonus-boost automatically when 14+ coins are placed.
+//  * Adds lastPositionReel:bonus-boost automatically when 22+ coins are placed.
 //  */
 // export function generateExtraFeatureGaffe(
 //   coins:   ExtraFeatureCoin[],
@@ -34,7 +34,7 @@
 
 //   let out = `[reelStopPositions:[${rsp.join(",")}]`;
 //   if (lc.length)        out += `,landedCoins:[${lc.map((c: any) => `[${c.join(",")}]`).join(",")}]`;
-//   if (coins.length >= 14) out += `,lastPositionReel:bonus-boost`;
+//   if (coins.length >= 22) out += `,lastPositionReel:bonus-boost`;
 //   if (upgrade)          out += `,goodPosition:[${upgrade.col},${upgrade.row}],additionalFeatureTriggered:[${upgrade.features.join(",")}]`;
 //   out += `]`;
 //   return out;
@@ -46,9 +46,9 @@ import { posToCol, posToRow } from "./config";
 
 export const EXTRA_COIN_COLORS = [
   { label: "Orange(4)",    value: 4  },
-  { label: "Blue(9)",      value: 9  },
-  { label: "Purple(14)",     value: 14 },
-  { label: "AllColor(19)", value: 19 },
+  { label: "Blue(13)",      value: 13  },
+  { label: "Purple(22)",     value: 22 },
+  { label: "AllColor(31)", value: 31 },
 ];
 export const EXTRA_COIN_VALUES = ["1", "2", "5", "MINOR", "MAJOR", "MINI"];
 
@@ -63,7 +63,7 @@ export type UpgradeInfo = { col: number; row: number; features: string[] };
 
 /**
  * Generate Extra Feature gaffe line.
- * Adds lastPositionReel:bonus-boost automatically when 14+ coins are placed.
+ * Adds lastPositionReel:bonus-boost automatically when 22+ coins are placed.
  */
 export function generateExtraFeatureGaffe(
   coins:   ExtraFeatureCoin[],
@@ -78,7 +78,7 @@ export function generateExtraFeatureGaffe(
 
   let out = `[reelStopPositions:[${rsp.join(",")}]`;
   if (lc.length)        out += `,landedCoins:[${lc.map((c: any) => `[${c.join(",")}]`).join(",")}]`;
-  if (coins.length >= 14) out += `,lastPositionReel:bonus-boost`;
+  if (coins.length >= 22) out += `,lastPositionReel:bonus-boost`;
   if (upgrade)          out += `,goodPosition:[${upgrade.col},${upgrade.row}],additionalFeatureTriggered:[${upgrade.features.join(",")}]`;
   out += `]`;
   return out;

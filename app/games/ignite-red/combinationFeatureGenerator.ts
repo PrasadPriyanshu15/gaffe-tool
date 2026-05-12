@@ -8,34 +8,34 @@
 // // Update color codes/labels once confirmed from game spec
 // export const COMBO_COIN_COLORS: Record<string, CoinColorOption[]> = {
 //   // 2-feature
-//   "double+extra":  [{ label:"Red(4)",    value:4 }, { label:"Green(9)",  value:9 }, { label:"AllColor(14)", value:14 }, { label:"Gold(19)", value:19 }],
-//   "double+ultra":  [{ label:"Red(4)",    value:4 }, { label:"Purple(9)", value:9 }, { label:"AllColor(14)", value:14 }, { label:"Gold(19)", value:19 }],
-//   "double+zone":   [{ label:"Red(4)",    value:4 }, { label:"Blue(9)",   value:9 }, { label:"AllColor(14)", value:14 }, { label:"Gold(19)", value:19 }],
-//   "extra+ultra":   [{ label:"Green(4)",  value:4 }, { label:"Purple(9)", value:9 }, { label:"AllColor(14)", value:14 }, { label:"Gold(19)", value:19 }],
-//   "extra+zone":    [{ label:"Green(4)",  value:4 }, { label:"Blue(9)",   value:9 }, { label:"AllColor(14)", value:14 }, { label:"Gold(19)", value:19 }],
-//   "ultra+zone":    [{ label:"Purple(4)", value:4 }, { label:"Blue(9)",   value:9 }, { label:"AllColor(14)", value:14 }, { label:"Gold(19)", value:19 }],
+//   "double+extra":  [{ label:"Red(4)",    value:4 }, { label:"Green(13)",  value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
+//   "double+ultra":  [{ label:"Red(4)",    value:4 }, { label:"Purple(13)", value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
+//   "double+zone":   [{ label:"Red(4)",    value:4 }, { label:"Blue(13)",   value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
+//   "extra+ultra":   [{ label:"Green(4)",  value:4 }, { label:"Purple(13)", value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
+//   "extra+zone":    [{ label:"Green(4)",  value:4 }, { label:"Blue(13)",   value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
+//   "ultra+zone":    [{ label:"Purple(4)", value:4 }, { label:"Blue(13)",   value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
 //   // 3-feature
-//   "double+extra+ultra":  [{ label:"Red(4)",    value:4 }, { label:"AllColor(9)", value:9 }, { label:"Gold(14)", value:14 }, { label:"Gold(19)", value:19 }],
-//   "double+extra+zone":   [{ label:"Red(4)",    value:4 }, { label:"AllColor(9)", value:9 }, { label:"Gold(14)", value:14 }, { label:"Gold(19)", value:19 }],
-//   "double+ultra+zone":   [{ label:"Red(4)",    value:4 }, { label:"AllColor(9)", value:9 }, { label:"Gold(14)", value:14 }, { label:"Gold(19)", value:19 }],
-//   "extra+ultra+zone":    [{ label:"Green(4)",  value:4 }, { label:"AllColor(9)", value:9 }, { label:"Gold(14)", value:14 }, { label:"Gold(19)", value:19 }],
+//   "double+extra+ultra":  [{ label:"Red(4)",    value:4 }, { label:"AllColor(13)", value:13 }, { label:"Gold(22)", value:22 }, { label:"Gold(31)", value:31 }],
+//   "double+extra+zone":   [{ label:"Red(4)",    value:4 }, { label:"AllColor(13)", value:13 }, { label:"Gold(22)", value:22 }, { label:"Gold(31)", value:31 }],
+//   "double+ultra+zone":   [{ label:"Red(4)",    value:4 }, { label:"AllColor(13)", value:13 }, { label:"Gold(22)", value:22 }, { label:"Gold(31)", value:31 }],
+//   "extra+ultra+zone":    [{ label:"Green(4)",  value:4 }, { label:"AllColor(13)", value:13 }, { label:"Gold(22)", value:22 }, { label:"Gold(31)", value:31 }],
 //   // 4-feature
-//   "double+extra+ultra+zone": [{ label:"Red(4)", value:4 }, { label:"Green(9)", value:9 }, { label:"Purple(14)", value:14 }, { label:"AllColor(19)", value:19 }],
+//   "double+extra+ultra+zone": [{ label:"Red(4)", value:4 }, { label:"Green(13)", value:13 }, { label:"Purple(22)", value:22 }, { label:"AllColor(31)", value:31 }],
 // };
 
 // // ── Scat seed colorCode per combination (base scats → feature grid colorCode) ─
 // export const COMBO_SCAT_SEED_COLOR: Record<string, Record<string, number>> = {
-//   "double+extra":  { blue:9,  green:9,  red:4,  purple:4,  all:4  },
-//   "double+ultra":  { blue:4,  green:4,  red:4,  purple:9,  all:4  },
-//   "double+zone":   { blue:9,  green:4,  red:4,  purple:4,  all:4  },
-//   "extra+ultra":   { blue:4,  green:4,  red:4,  purple:9,  all:4  },
-//   "extra+zone":    { blue:9,  green:4,  red:4,  purple:4,  all:4  },
-//   "ultra+zone":    { blue:9,  green:4,  red:4,  purple:4,  all:4  },
-//   "double+extra+ultra":  { blue:4,  green:9, red:4,  purple:9,  all:9  },
-//   "double+extra+zone":   { blue:9,  green:9, red:4,  purple:4,  all:9  },
-//   "double+ultra+zone":   { blue:9,  green:4, red:4,  purple:9,  all:9  },
-//   "extra+ultra+zone":    { blue:9,  green:4, red:4,  purple:9,  all:9  },
-//   "double+extra+ultra+zone": { blue:9, green:9, red:4, purple:14, all:9 },
+//   "double+extra":  { blue:13,  green:13,  red:4,  purple:4,  all:4  },
+//   "double+ultra":  { blue:4,  green:4,  red:4,  purple:13,  all:4  },
+//   "double+zone":   { blue:13,  green:4,  red:4,  purple:4,  all:4  },
+//   "extra+ultra":   { blue:4,  green:4,  red:4,  purple:13,  all:4  },
+//   "extra+zone":    { blue:13,  green:4,  red:4,  purple:4,  all:4  },
+//   "ultra+zone":    { blue:13,  green:4,  red:4,  purple:4,  all:4  },
+//   "double+extra+ultra":  { blue:4,  green:13, red:4,  purple:13,  all:13  },
+//   "double+extra+zone":   { blue:13,  green:13, red:4,  purple:4,  all:13  },
+//   "double+ultra+zone":   { blue:13,  green:4, red:4,  purple:13,  all:13  },
+//   "extra+ultra+zone":    { blue:13,  green:4, red:4,  purple:13,  all:13  },
+//   "double+extra+ultra+zone": { blue:13, green:13, red:4, purple:22, all:13 },
 // };
 
 // // ── Types ─────────────────────────────────────────────────────────────────────
@@ -75,9 +75,9 @@
 //   const key = getComboKey(features);
 //   return COMBO_COIN_COLORS[key] ?? [
 //     { label:"Red(4)",    value:4  },
-//     { label:"Blue(9)",   value:9  },
-//     { label:"Green(14)", value:14 },
-//     { label:"AllColor(19)", value:19 },
+//     { label:"Blue(13)",   value:13  },
+//     { label:"Green(22)", value:22 },
+//     { label:"AllColor(31)", value:31 },
 //   ];
 // }
 
@@ -105,7 +105,7 @@
 //  *  - Ultra:       boostValues:[15 slots] emitted if any non-zero boost
 //  *  - Double+Ultra: boostSide:[15 slots] emitted if any side set
 //  *  - Zone:        zoneSplitter + zoneMultipliers appended
-//  *  - Extra/Ultra: lastPositionReel:bonus-boost when 14+ coins placed
+//  *  - Extra/Ultra: lastPositionReel:bonus-boost when 22+ coins placed
 //  *  - Upgrade:     goodPosition + additionalFeatureTriggered appended
 //  */
 // export function generateCombinationGaffe(
@@ -172,8 +172,8 @@
 //   if (hasZone && multipliers && multipliers.length > 0)
 //     out += `,zoneMultipliers:[${multipliers.join(",")}]`;
 
-//   // lastPositionReel when 14+ coins and extra or ultra active
-//   if (coins.length >= 14 && (hasExtra || hasUltra))
+//   // lastPositionReel when 22+ coins and extra or ultra active
+//   if (coins.length >= 22 && (hasExtra || hasUltra))
 //     out += `,lastPositionReel:bonus-boost`;
 
 //   if (upgrade)
@@ -195,34 +195,34 @@ export type CoinColorOption = { label: string; value: number };
 // Update color codes/labels once confirmed from game spec
 export const COMBO_COIN_COLORS: Record<string, CoinColorOption[]> = {
   // 2-feature
-  "double+extra":  [{ label:"Red(4)",    value:4 }, { label:"Green(9)",  value:9 }, { label:"AllColor(14)", value:14 }, { label:"Gold(19)", value:19 }],
-  "double+ultra":  [{ label:"Red(4)",    value:4 }, { label:"Purple(9)", value:9 }, { label:"AllColor(14)", value:14 }, { label:"Gold(19)", value:19 }],
-  "double+zone":   [{ label:"Red(4)",    value:4 }, { label:"Blue(9)",   value:9 }, { label:"AllColor(14)", value:14 }, { label:"Gold(19)", value:19 }],
-  "extra+ultra":   [{ label:"Green(4)",  value:4 }, { label:"Purple(9)", value:9 }, { label:"AllColor(14)", value:14 }, { label:"Gold(19)", value:19 }],
-  "extra+zone":    [{ label:"Green(4)",  value:4 }, { label:"Blue(9)",   value:9 }, { label:"AllColor(14)", value:14 }, { label:"Gold(19)", value:19 }],
-  "ultra+zone":    [{ label:"Purple(4)", value:4 }, { label:"Blue(9)",   value:9 }, { label:"AllColor(14)", value:14 }, { label:"Gold(19)", value:19 }],
+  "double+extra":  [{ label:"Red(4)",    value:4 }, { label:"Green(13)",  value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
+  "double+ultra":  [{ label:"Red(4)",    value:4 }, { label:"Purple(13)", value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
+  "double+zone":   [{ label:"Red(4)",    value:4 }, { label:"Blue(13)",   value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
+  "extra+ultra":   [{ label:"Green(4)",  value:4 }, { label:"Purple(13)", value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
+  "extra+zone":    [{ label:"Green(4)",  value:4 }, { label:"Blue(13)",   value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
+  "ultra+zone":    [{ label:"Purple(4)", value:4 }, { label:"Blue(13)",   value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
   // 3-feature
-  "double+extra+ultra":  [{ label:"Red(4)",    value:4 }, { label:"AllColor(9)", value:9 }, { label:"Gold(14)", value:14 }, { label:"Gold(19)", value:19 }],
-  "double+extra+zone":   [{ label:"Red(4)",    value:4 }, { label:"AllColor(9)", value:9 }, { label:"Gold(14)", value:14 }, { label:"Gold(19)", value:19 }],
-  "double+ultra+zone":   [{ label:"Red(4)",    value:4 }, { label:"AllColor(9)", value:9 }, { label:"Gold(14)", value:14 }, { label:"Gold(19)", value:19 }],
-  "extra+ultra+zone":    [{ label:"Green(4)",  value:4 }, { label:"AllColor(9)", value:9 }, { label:"Gold(14)", value:14 }, { label:"Gold(19)", value:19 }],
+  "double+extra+ultra":  [{ label:"Red(4)",    value:4 }, { label:"AllColor(13)", value:13 }, { label:"Gold(22)", value:22 }, { label:"Gold(31)", value:31 }],
+  "double+extra+zone":   [{ label:"Red(4)",    value:4 }, { label:"AllColor(13)", value:13 }, { label:"Gold(22)", value:22 }, { label:"Gold(31)", value:31 }],
+  "double+ultra+zone":   [{ label:"Red(4)",    value:4 }, { label:"AllColor(13)", value:13 }, { label:"Gold(22)", value:22 }, { label:"Gold(31)", value:31 }],
+  "extra+ultra+zone":    [{ label:"Green(4)",  value:4 }, { label:"AllColor(13)", value:13 }, { label:"Gold(22)", value:22 }, { label:"Gold(31)", value:31 }],
   // 4-feature
-  "double+extra+ultra+zone": [{ label:"Red(4)", value:4 }, { label:"Green(9)", value:9 }, { label:"Purple(14)", value:14 }, { label:"AllColor(19)", value:19 }],
+  "double+extra+ultra+zone": [{ label:"Red(4)", value:4 }, { label:"Green(13)", value:13 }, { label:"Purple(22)", value:22 }, { label:"AllColor(31)", value:31 }],
 };
 
 // ── Scat seed colorCode per combination (base scats → feature grid colorCode) ─
 export const COMBO_SCAT_SEED_COLOR: Record<string, Record<string, number>> = {
-  "double+extra":  { blue:9,  green:9,  red:4,  purple:4,  all:4  },
-  "double+ultra":  { blue:4,  green:4,  red:4,  purple:9,  all:4  },
-  "double+zone":   { blue:9,  green:4,  red:4,  purple:4,  all:4  },
-  "extra+ultra":   { blue:4,  green:4,  red:4,  purple:9,  all:4  },
-  "extra+zone":    { blue:9,  green:4,  red:4,  purple:4,  all:4  },
-  "ultra+zone":    { blue:9,  green:4,  red:4,  purple:4,  all:4  },
-  "double+extra+ultra":  { blue:4,  green:9, red:4,  purple:9,  all:9  },
-  "double+extra+zone":   { blue:9,  green:9, red:4,  purple:4,  all:9  },
-  "double+ultra+zone":   { blue:9,  green:4, red:4,  purple:9,  all:9  },
-  "extra+ultra+zone":    { blue:9,  green:4, red:4,  purple:9,  all:9  },
-  "double+extra+ultra+zone": { blue:9, green:9, red:4, purple:14, all:9 },
+  "double+extra":  { blue:13,  green:13,  red:4,  purple:4,  all:4  },
+  "double+ultra":  { blue:4,  green:4,  red:4,  purple:13,  all:4  },
+  "double+zone":   { blue:13,  green:4,  red:4,  purple:4,  all:4  },
+  "extra+ultra":   { blue:4,  green:4,  red:4,  purple:13,  all:4  },
+  "extra+zone":    { blue:13,  green:4,  red:4,  purple:4,  all:4  },
+  "ultra+zone":    { blue:13,  green:4,  red:4,  purple:4,  all:4  },
+  "double+extra+ultra":  { blue:4,  green:13, red:4,  purple:13,  all:13  },
+  "double+extra+zone":   { blue:13,  green:13, red:4,  purple:4,  all:13  },
+  "double+ultra+zone":   { blue:13,  green:4, red:4,  purple:13,  all:13  },
+  "extra+ultra+zone":    { blue:13,  green:4, red:4,  purple:13,  all:13  },
+  "double+extra+ultra+zone": { blue:13, green:13, red:4, purple:22, all:13 },
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -262,9 +262,9 @@ export function getComboCoinColors(features: string[]): CoinColorOption[] {
   const key = getComboKey(features);
   return COMBO_COIN_COLORS[key] ?? [
     { label:"Red(4)",    value:4  },
-    { label:"Blue(9)",   value:9  },
-    { label:"Green(14)", value:14 },
-    { label:"AllColor(19)", value:19 },
+    { label:"Blue(13)",   value:13  },
+    { label:"Green(22)", value:22 },
+    { label:"AllColor(31)", value:31 },
   ];
 }
 
@@ -292,7 +292,7 @@ export function resolveUpgradeFeatures(colorCode: number): string[] {
  *  - Ultra:       boostValues:[15 slots] emitted if any non-zero boost
  *  - Double+Ultra: boostSide:[15 slots] emitted if any side set
  *  - Zone:        zoneSplitter + zoneMultipliers appended
- *  - Extra/Ultra: lastPositionReel:bonus-boost when 14+ coins placed
+ *  - Extra/Ultra: lastPositionReel:bonus-boost when 22+ coins placed
  *  - Upgrade:     goodPosition + additionalFeatureTriggered appended
  */
 export function generateCombinationGaffe(
@@ -359,8 +359,8 @@ export function generateCombinationGaffe(
   if (hasZone && multipliers && multipliers.length > 0)
     out += `,zoneMultipliers:[${multipliers.join(",")}]`;
 
-  // lastPositionReel when 14+ coins and extra or ultra active
-  if (coins.length >= 14 && (hasExtra || hasUltra))
+  // lastPositionReel when 22+ coins and extra or ultra active
+  if (coins.length >= 22 && (hasExtra || hasUltra))
     out += `,lastPositionReel:bonus-boost`;
 
   if (upgrade)

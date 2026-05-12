@@ -223,7 +223,7 @@ type Props = {
 const MAX_SPINS = 3;
 
 const COIN_SELECT_BG: Record<number, string> = {
-  4: "bg-red-800", 9: "bg-orange-800", 14: "bg-emerald-800", 19: "bg-indigo-800",
+  4: "bg-red-800", 13: "bg-orange-800", 22: "bg-emerald-800", 31: "bg-indigo-800",
 };
 
 export default function DoubleFeature({ baseCoins, onCoinsChange, onSpin, onReset, onUpgrade }: Props) {

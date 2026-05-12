@@ -3,9 +3,9 @@
 
 // export const ULTRA_COIN_COLORS = [
 //   { label: "Purple(4)",    value: 4  },
-//   { label: "Blue(9)",      value: 9  },
-//   { label: "Green(14)",    value: 14 },
-//   { label: "AllColor(19)", value: 19 },
+//   { label: "Blue(13)",      value: 13  },
+//   { label: "Green(22)",    value: 22 },
+//   { label: "AllColor(31)", value: 31 },
 // ];
 // export const ULTRA_COIN_VALUES  = ["1", "2", "5", "Minor", "Major", "Mini"];
 // export const ULTRA_BOOST_VALUES = ["0", "0.5", "1", "2", "5", "10", "25", "50", "100"];
@@ -57,7 +57,7 @@
 //   if (lc.length)         out += `,landedCoins:[${lc.map((c: any) => `[${c.join(",")}]`).join(",")}]`;
 //   if (hasBoost)          out += `,boostValues:[${boostArr.join(",")}]`;
 //   if (hasSide)           out += `,boostSide:[${sideArr.join(",")}]`;
-//   if (coins.length >= 14) out += `,lastPositionReel:bonus-boost`;
+//   if (coins.length >= 22) out += `,lastPositionReel:bonus-boost`;
 //   if (upgrade)           out += `,goodPosition:[${upgrade.col},${upgrade.row}],additionalFeatureTriggered:[${upgrade.features.join(",")}]`;
 //   out += `]`;
 //   return out;
@@ -69,9 +69,9 @@ import { posToCol, posToRow } from "./config";
 
 export const ULTRA_COIN_COLORS = [
   { label: "Purple(4)",    value: 4  },
-  { label: "Blue(9)",      value: 9  },
-  { label: "Green(14)",    value: 14 },
-  { label: "AllColor(19)", value: 19 },
+  { label: "Blue(13)",      value: 13  },
+  { label: "Green(22)",    value: 22 },
+  { label: "AllColor(31)", value: 31 },
 ];
 export const ULTRA_COIN_VALUES  = ["1", "2", "5", "MINOR", "MAJOR", "MINI"];
 export const ULTRA_BOOST_VALUES = ["0", "0.5", "1", "2", "5", "10", "25", "50", "100"];
@@ -119,7 +119,7 @@ export function generateUltraFeatureGaffe(
   if (lc.length)         out += `,landedCoins:[${lc.map((c: any) => `[${c.join(",")}]`).join(",")}]`;
   if (hasBoost)          out += `,boostValues:[${boostArr.join(",")}]`;
   if (hasSide)           out += `,boostSide:[${sideArr.join(",")}]`;
-  if (coins.length >= 14) out += `,lastPositionReel:bonus-boost`;
+  if (coins.length >= 22) out += `,lastPositionReel:bonus-boost`;
   if (upgrade)           out += `,goodPosition:[${upgrade.col},${upgrade.row}],additionalFeatureTriggered:[${upgrade.features.join(",")}]`;
   out += `]`;
   return out;

@@ -3,9 +3,9 @@
 
 // export const DOUBLE_COIN_COLORS = [
 //   { label: "Red(4)",       value: 4  },
-//   { label: "Orange(9)",    value: 9  },
-//   { label: "Green(14)",    value: 14 },
-//   { label: "AllColor(19)", value: 19 },
+//   { label: "Orange(13)",    value: 13  },
+//   { label: "Green(22)",    value: 22 },
+//   { label: "AllColor(31)", value: 31 },
 // ];
 // export const DOUBLE_COIN_VALUES = ["1", "2", "5", "Minor", "Major", "Mini"];
 
@@ -52,9 +52,9 @@ import { posToCol, posToRow } from "./config";
 
 export const DOUBLE_COIN_COLORS = [
   { label: "Red(4)",       value: 4  },
-  { label: "Orange(9)",    value: 9  },
-  { label: "Green(14)",    value: 14 },
-  { label: "AllColor(19)", value: 19 },
+  { label: "Orange(13)",    value: 13  },
+  { label: "Green(22)",    value: 22 },
+  { label: "AllColor(31)", value: 31 },
 ];
 export const DOUBLE_COIN_VALUES = ["1", "2", "5", "MINOR", "MAJOR", "MINI"];
 

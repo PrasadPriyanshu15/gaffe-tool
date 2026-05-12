@@ -22,7 +22,7 @@
 // const MAX_SPINS = 3;
 
 // const COIN_SELECT_BG: Record<number, string> = {
-//   4: "bg-orange-700", 9: "bg-pink-700", 14: "bg-emerald-700", 19: "bg-indigo-700",
+//   4: "bg-orange-700", 13: "bg-pink-700", 22: "bg-emerald-700", 31: "bg-indigo-700",
 // };
 
 // export default function ZoneFeature({ baseCoins, splitter, multipliers, onCoinsChange, onSpin, onReset, onUpgrade }: Props) {
@@ -223,7 +223,7 @@ type Props = {
 const MAX_SPINS = 3;
 
 const COIN_SELECT_BG: Record<number, string> = {
-  4: "bg-orange-700", 9: "bg-pink-700", 14: "bg-emerald-700", 19: "bg-indigo-700",
+  4: "bg-orange-700", 13: "bg-pink-700", 22: "bg-emerald-700", 31: "bg-indigo-700",
 };
 
 export default function ZoneFeature({ baseCoins, splitter, multipliers, onCoinsChange, onSpin, onReset, onUpgrade }: Props) {
@@ -258,7 +258,7 @@ export default function ZoneFeature({ baseCoins, splitter, multipliers, onCoinsC
   };
 
   const upgradeCoinn = upgradePos !== null ? coinAt(upgradePos) : null;
-  const isAllColor   = upgradeCoinn?.colorCode === 19;
+  const isAllColor   = upgradeCoinn?.colorCode === 31;
 
   const upgradeOptions: string[] = (() => {
     if (!upgradeCoinn) return [];

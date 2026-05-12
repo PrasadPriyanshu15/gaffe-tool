@@ -214,10 +214,10 @@ type Props = {
 const MAX_SPINS = 4;
 
 const COIN_SELECT_BG: Record<number, string> = {
-  4: "bg-orange-700", 9: "bg-blue-700", 14: "bg-pink-700", 19: "bg-indigo-700",
+  4: "bg-orange-700", 13: "bg-blue-700", 22: "bg-pink-700", 31: "bg-indigo-700",
 };
 const CELL_BORDER: Record<number, string> = {
-  4: "border-orange-500", 9: "border-blue-500", 14: "border-pink-500", 19: "border-indigo-500",
+  4: "border-orange-500", 13: "border-blue-500", 22: "border-pink-500", 31: "border-indigo-500",
 };
 
 export default function ExtraFeature({ baseCoins, onCoinsChange, onSpin, onReset, onUpgrade }: Props) {
