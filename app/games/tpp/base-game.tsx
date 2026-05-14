@@ -31,7 +31,7 @@ type Props = {
 
 /** Symbols available as STACK resolution targets */
 const STACK_SYMBOLS = [
-  "PIC1","PIC2","PIC3","PIC4","PIC5","A","K","Q","J","10","9",
+  "PIC1","PIC2","PIC3","PIC4","PIC5","ACE","KING","QUEEN","JACK","TEN","NINE",
 ];
 
 const FEATURE_META: Record<ScatKey, {

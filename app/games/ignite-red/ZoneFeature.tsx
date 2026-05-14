@@ -1,3 +1,4 @@
+
 // /* eslint-disable @typescript-eslint/no-explicit-any */
 // "use client";
 
@@ -32,9 +33,10 @@
 //   const [spinsLeft, setSpinsLeft] = useState(MAX_SPINS);
 //   const lastPos = useRef<Set<number>>(new Set(init.map(c => c.position)));
 
-//   const [upgradePos,     setUpgradePos]     = useState<number | null>(null);
-//   const [upgradeFeatSel, setUpgradeFeatSel] = useState<string>("");
-//   const [pendingUpgrade, setPendingUpgrade] = useState<UpgradeInfo | null>(null);
+//   const [upgradePos,      setUpgradePos]      = useState<number | null>(null);
+//   const [upgradeFeatSel,  setUpgradeFeatSel]  = useState<string>("");
+//   const [upgradeMultiSel, setUpgradeMultiSel] = useState<Set<string>>(new Set());
+//   const [pendingUpgrade,  setPendingUpgrade]  = useState<UpgradeInfo | null>(null);
 
 //   const coinAt = (pos: number) => coins.find(c => c.position === pos);
 
@@ -44,24 +46,32 @@
 //   };
 //   const removeCoin = (pos: number) => {
 //     if (coinAt(pos)?.fromBase) return;
-//     if (upgradePos === pos) { setUpgradePos(null); setUpgradeFeatSel(""); setPendingUpgrade(null); }
+//     if (upgradePos === pos) { setUpgradePos(null); setUpgradeFeatSel(""); setUpgradeMultiSel(new Set()); setPendingUpgrade(null); }
 //     setCoins(prev => prev.filter(c => c.position !== pos));
 //   };
 //   const updateCoin = (pos: number, field: keyof ZoneFeatureCoin, val: any) =>
 //     setCoins(prev => prev.map(c => c.position === pos ? { ...c, [field]: val } : c));
 
 //   const handleUpgradeRadio = (pos: number) => {
-//     if (upgradePos === pos) { setUpgradePos(null); setUpgradeFeatSel(""); setPendingUpgrade(null); return; }
-//     setUpgradePos(pos); setUpgradeFeatSel(""); setPendingUpgrade(null);
+//     if (upgradePos === pos) { setUpgradePos(null); setUpgradeFeatSel(""); setUpgradeMultiSel(new Set()); setPendingUpgrade(null); return; }
+//     setUpgradePos(pos); setUpgradeFeatSel(""); setUpgradeMultiSel(new Set()); setPendingUpgrade(null);
 //   };
 
-//   // Options: features this coin can upgrade to, excluding zone (already active)
+//   const upgradeCoinn = upgradePos !== null ? coinAt(upgradePos) : null;
+//   const isAllColor   = upgradeCoinn?.colorCode === 31;
+
 //   const upgradeOptions: string[] = (() => {
-//     if (upgradePos === null) return [];
-//     const uc = coinAt(upgradePos);
-//     if (!uc) return [];
-//     return (UPGRADE_CODE_TO_FEATURES[uc.colorCode] ?? []).filter(f => f !== "ZONE");
+//     if (!upgradeCoinn) return [];
+//     return (UPGRADE_CODE_TO_FEATURES[upgradeCoinn.colorCode] ?? []).filter(f => f !== "ZONE");
 //   })();
+
+//   const toggleMulti = (f: string) => {
+//     setUpgradeMultiSel(prev => {
+//       const next = new Set(prev);
+//       if (next.has(f)) next.delete(f); else next.add(f);
+//       return next;
+//     });
+//   };
 
 //   const handleSpin = () => {
 //     if (spinsLeft <= 0) return;
@@ -72,9 +82,14 @@
 //     onCoinsChange(coins);
 
 //     let upgrade: UpgradeInfo | null = null;
-//     if (upgradePos !== null && upgradeFeatSel) {
-//       const uc = coinAt(upgradePos);
-//       if (uc) { upgrade = { col: Math.floor(upgradePos / 3), row: upgradePos % 3, features: [upgradeFeatSel] }; setPendingUpgrade(upgrade); }
+//     if (upgradePos !== null && upgradeCoinn) {
+//       const selectedFeats = isAllColor
+//         ? Array.from(upgradeMultiSel)
+//         : upgradeFeatSel ? [upgradeFeatSel] : [];
+//       if (selectedFeats.length > 0) {
+//         upgrade = { col: Math.floor(upgradePos / 3), row: upgradePos % 3, features: selectedFeats };
+//         setPendingUpgrade(upgrade);
+//       }
 //     }
 //     onSpin(generateZoneFeatureGaffe(coins, splitter, multipliers, upgrade));
 //   };
@@ -83,7 +98,7 @@
 //     const s = baseCoins.map(c => ({ ...c, fromBase: true }));
 //     setCoins(s); setSpinsLeft(MAX_SPINS);
 //     lastPos.current = new Set(s.map(c => c.position));
-//     setUpgradePos(null); setUpgradeFeatSel(""); setPendingUpgrade(null);
+//     setUpgradePos(null); setUpgradeFeatSel(""); setUpgradeMultiSel(new Set()); setPendingUpgrade(null);
 //     onReset();
 //   };
 
@@ -108,7 +123,6 @@
 
 //       {isOpen && (
 //         <div className="p-4 pt-0 flex flex-col gap-3">
-//           {/* Controls */}
 //           <div className="flex items-center gap-3 flex-wrap">
 //             <button onClick={handleSpin} disabled={spinsLeft <= 0}
 //               className={`px-5 py-1.5 rounded font-bold font-mono transition-all ${spinsLeft > 0 ? "bg-blue-600 hover:bg-blue-500" : "bg-gray-600 opacity-50 cursor-not-allowed"}`}>
@@ -118,34 +132,48 @@
 //             <button onClick={reset} className="px-3 py-1 bg-gray-600 hover:bg-gray-500 rounded text-sm">Reset</button>
 //           </div>
 
-//           {/* Upgrade pending → show Go To button */}
-//           {pendingUpgrade && upgradeFeatSel && (
+//           {pendingUpgrade && pendingUpgrade.features.length > 0 && (
 //             <div className="flex items-center gap-3 bg-yellow-900/30 border border-yellow-700 rounded-lg p-3">
 //               <span className="text-yellow-300 text-sm font-mono">✦ Upgrade ready:</span>
 //               <button onClick={handleGoToUpgrade} className="px-4 py-1.5 bg-yellow-600 hover:bg-yellow-500 rounded font-bold text-sm font-mono">
 //                 Go to zone + {pendingUpgrade.features.map(f => f.toLowerCase()).join(" + ")}
 //               </button>
-//               <button onClick={() => { setPendingUpgrade(null); setUpgradeFeatSel(""); setUpgradePos(null); }} className="text-gray-400 hover:text-red-400 text-xs">✕</button>
+//               <button onClick={() => { setPendingUpgrade(null); setUpgradeFeatSel(""); setUpgradeMultiSel(new Set()); setUpgradePos(null); }} className="text-gray-400 hover:text-red-400 text-xs">✕</button>
 //             </div>
 //           )}
 
-//           {/* Upgrade coin selected → show feature dropdown */}
 //           {upgradePos !== null && !pendingUpgrade && upgradeOptions.length > 0 && (
-//             <div className="flex items-center gap-2 bg-yellow-900/20 border border-yellow-800 rounded-lg p-2">
-//               <span className="text-yellow-300 text-xs font-mono">Upgrade {posToMetric(upgradePos)} →</span>
-//               <select className="bg-yellow-900 text-yellow-100 text-xs rounded px-2 py-1 font-mono border border-yellow-700"
-//                 value={upgradeFeatSel} onChange={e => setUpgradeFeatSel(e.target.value)}>
-//                 <option value="">Select feature...</option>
-//                 {upgradeOptions.map(f => <option key={f} value={f}>{f}</option>)}
-//               </select>
-//               {upgradeFeatSel && <span className="text-yellow-400 text-xs font-mono">→ SPIN to confirm</span>}
+//             <div className="flex flex-col gap-2 bg-yellow-900/20 border border-yellow-800 rounded-lg p-2">
+//               <span className="text-yellow-300 text-xs font-mono">
+//                 Upgrade {posToMetric(upgradePos)} →
+//                 {isAllColor ? " AllColor coin: select multiple features" : " Single-color coin: select 1 feature"}
+//               </span>
+//               {isAllColor ? (
+//                 <div className="flex gap-2 flex-wrap">
+//                   {upgradeOptions.map(f => (
+//                     <label key={f} className="flex items-center gap-1 cursor-pointer bg-yellow-900/40 border border-yellow-700 rounded px-2 py-1">
+//                       <input type="checkbox" className="accent-yellow-400 w-3 h-3"
+//                         checked={upgradeMultiSel.has(f)} onChange={() => toggleMulti(f)} />
+//                       <span className="text-yellow-100 text-xs font-mono">{f}</span>
+//                     </label>
+//                   ))}
+//                 </div>
+//               ) : (
+//                 <select className="bg-yellow-900 text-yellow-100 text-xs rounded px-2 py-1 font-mono border border-yellow-700 self-start"
+//                   value={upgradeFeatSel} onChange={e => setUpgradeFeatSel(e.target.value)}>
+//                   <option value="">Select feature...</option>
+//                   {upgradeOptions.map(f => <option key={f} value={f}>{f}</option>)}
+//                 </select>
+//               )}
+//               {((isAllColor && upgradeMultiSel.size > 0) || (!isAllColor && upgradeFeatSel)) && (
+//                 <span className="text-yellow-400 text-xs font-mono">→ SPIN to confirm</span>
+//               )}
 //             </div>
 //           )}
 //           {upgradePos !== null && upgradeOptions.length === 0 && (
 //             <div className="text-xs text-gray-500 font-mono bg-gray-700 px-3 py-1.5 rounded">ℹ No upgrades available from this coin color</div>
 //           )}
 
-//           {/* 5×3 Grid */}
 //           <div className="grid gap-1" style={{ gridTemplateColumns: "repeat(5, minmax(0,1fr))" }}>
 //             {Array.from({ length: 3 }).map((_, row) =>
 //               Array.from({ length: 5 }).map((_, col) => {
@@ -171,7 +199,6 @@
 //                           onChange={e => updateCoin(pos, "value", e.target.value)}>
 //                           {ZONE_COIN_VALUES.map(v => <option key={v} value={v} className="bg-gray-800">{v}</option>)}
 //                         </select>
-//                         {/* Upgrade radio */}
 //                         <div className="flex items-center gap-1 mt-0.5" onClick={e => e.stopPropagation()}>
 //                           <input type="radio" name="zoneUpgrade" className="accent-yellow-400 w-3 h-3 cursor-pointer"
 //                             checked={upgradePos === pos} onChange={() => handleUpgradeRadio(pos)} />
@@ -190,12 +217,16 @@
 //               })
 //             )}
 //           </div>
-//           <div className="text-[10px] text-gray-600 font-mono">🟡 click empty cell to add · ✕ remove · ✦ radio = upgrade trigger</div>
+//           <div className="text-[10px] text-gray-600 font-mono">
+//             🟡 click empty cell to add · ✕ remove · ✦ radio = upgrade trigger
+//             · single-color = 1 upgrade · AllColor = multi-upgrade
+//           </div>
 //         </div>
 //       )}
 //     </div>
 //   );
 // }
+
 
 
 
@@ -208,7 +239,7 @@ import {
   ZONE_BG_CLASS, ZONE_BORDER_CLASS, getZoneBgColor,
   UpgradeInfo, generateZoneFeatureGaffe,
 } from "./zoneFeatureGenerator";
-import { posToMetric, UPGRADE_CODE_TO_FEATURES } from "./config";
+import { posToMetric, FEATURE_UPGRADE_MAP, ALL_UPGRADE_FEATURES } from "./config";
 
 type Props = {
   baseCoins:   ZoneFeatureCoin[];
@@ -258,11 +289,13 @@ export default function ZoneFeature({ baseCoins, splitter, multipliers, onCoinsC
   };
 
   const upgradeCoinn = upgradePos !== null ? coinAt(upgradePos) : null;
-  const isAllColor   = upgradeCoinn?.colorCode === 31;
+  const ZONE_ALLCOLOR_CODE = ZONE_COIN_COLORS[ZONE_COIN_COLORS.length - 1].value;
+  const isAllColor   = upgradeCoinn?.colorCode === ZONE_ALLCOLOR_CODE;
 
   const upgradeOptions: string[] = (() => {
     if (!upgradeCoinn) return [];
-    return (UPGRADE_CODE_TO_FEATURES[upgradeCoinn.colorCode] ?? []).filter(f => f !== "ZONE");
+    if (isAllColor) return ALL_UPGRADE_FEATURES.filter(f => f !== "ZONE");
+    return (FEATURE_UPGRADE_MAP["zone"][upgradeCoinn.colorCode] ?? []).filter(f => f !== "ZONE");
   })();
 
   const toggleMulti = (f: string) => {
