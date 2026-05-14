@@ -7,9 +7,9 @@ export type CoinColorOption = { label: string; value: number };
 // ── Coin color options per combination ───────────────────────────────────────
 export const COMBO_COIN_COLORS: Record<string, CoinColorOption[]> = {
   // 2-feature
-  "double+extra":  [{ label:"Blue(4)",    value:4 }, { label:"Purple(13)",  value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
+  "double+extra":  [{ label:"Purple(4)",    value:4 }, { label:"Blue(13)",  value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
   "double+ultra":  [{ label:"Blue(4)",    value:4 }, { label:"Green(13)", value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
-  "double+zone":   [{ label:"Green(4)",    value:4 }, { label:"Purple(13)",   value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
+  "double+zone":   [{ label:"Purple(4)",    value:4 }, { label:"Green(13)",   value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
   "extra+ultra":   [{ label:"Red(4)",  value:4 }, { label:"Blue(13)", value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
   "extra+zone":    [{ label:"Red(4)",  value:4 }, { label:"Purple(13)",   value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],
   "ultra+zone":    [{ label:"Red(4)", value:4 }, { label:"Green(13)",   value:13 }, { label:"AllColor(22)", value:22 }, { label:"Gold(31)", value:31 }],

@@ -83,7 +83,7 @@ export const SCAT_COLOR_CODE: Record<ScatKey, number> = {
 };
 
 // ── Coin / boost values ───────────────────────────────────────────────────────
-export const COIN_VALUES          = ["1", "2", "5", "MINOR", "MAJOR", "MINI"];
+export const COIN_VALUES          = ["100", "250", "500", "MINOR", "MAJOR", "MINI"];
 export const BOOST_VALUES         = ["0", "0.5", "1", "2", "5", "10", "25", "50", "100"];
 export const ZONE_SPLITTER_OPTIONS = ["1", "2", "3", "4", "5", "6", "7"];
 

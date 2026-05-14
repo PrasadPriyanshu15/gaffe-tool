@@ -3,11 +3,11 @@ import { posToCol, posToRow } from "./config";
 
 export const EXTRA_COIN_COLORS = [
   { label: "Red(4)",    value: 4  },
-  { label: "Blue(13)",      value: 13  },
-  { label: "Purple(22)",     value: 22 },
+  { label: "Purplw(13)",      value: 13  },
+  { label: "Blue(22)",     value: 22 },
   { label: "AllColor(31)", value: 31 },
 ];
-export const EXTRA_COIN_VALUES = ["1", "2", "5", "MINOR", "MAJOR", "MINI"];
+export const EXTRA_COIN_VALUES = ["100", "250", "500", "MINOR", "MAJOR", "MINI"];
 
 export type ExtraFeatureCoin = {
   position:  number;

@@ -7,7 +7,7 @@ export const DOUBLE_COIN_COLORS = [
   { label: "Green(22)",    value: 22 },
   { label: "AllColor(31)", value: 31 },
 ];
-export const DOUBLE_COIN_VALUES = ["1", "2", "5", "MINOR", "MAJOR", "MINI"];
+export const DOUBLE_COIN_VALUES = ["100", "250", "500", "MINOR", "MAJOR", "MINI"];
 
 /**
  * Every position always has TWO coins: LEFT and RIGHT.

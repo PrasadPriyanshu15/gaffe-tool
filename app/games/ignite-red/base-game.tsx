@@ -187,7 +187,7 @@ export default function BaseGame({
   return (
     <div className="bg-gray-800 rounded-xl border border-gray-700">
       <div onClick={() => setIsOpen(!isOpen)} className="flex justify-between items-center p-4 cursor-pointer select-none">
-        <h2 className="text-lg font-bold text-gray-200 font-mono">🎲 Base Game</h2>
+        <h2 className="text-lg font-bold text-gray-200 font-mono"> Base Game</h2>
         <span className="text-gray-500">{isOpen ? "▼" : "▶"}</span>
       </div>
 
