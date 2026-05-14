@@ -461,7 +461,7 @@ function buildComboBaseCoins(activeFeatures: string[], reelStops: number[], scat
         result.push({
           position:   pos,
           colorCode,
-          value:      v || "1",
+          value:      v || "100",
           leftValue:  hasDouble && DOUBLE_SCAT_KEYS.has(s.key) ? (scats.leftValues[k]  || "") : "",
           rightValue: hasDouble && DOUBLE_SCAT_KEYS.has(s.key) ? (scats.rightValues[k] || "") : "",
           boostValue: hasUltra  && ULTRA_SCAT_KEYS.has(s.key)  ? (scats.boostValues[k] || "") : "",
