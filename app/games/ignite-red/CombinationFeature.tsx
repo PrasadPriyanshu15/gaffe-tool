@@ -882,7 +882,7 @@ import { posToMetric, ALL_UPGRADE_FEATURES } from "./config";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 // Fix #5: uppercase coin values
-const COMBO_COIN_VALUES = ["1", "2", "5", "MINOR", "MAJOR", "MINI"];
+const COMBO_COIN_VALUES = ["100", "250", "500", "MINOR", "MAJOR", "MINI"];
 
 const FEATURE_BADGE: Record<string, string> = {
   double: "bg-red-900 text-red-300 border border-red-600",
