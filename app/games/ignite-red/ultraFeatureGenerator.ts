@@ -8,7 +8,7 @@ export const ULTRA_COIN_COLORS = [
   { label: "Green(22)",    value: 22 },
   { label: "AllColor(31)", value: 31 },
 ];
-export const ULTRA_COIN_VALUES  = ["1", "2", "5", "MINOR", "MAJOR", "MINI"];
+export const ULTRA_COIN_VALUES  = ["100", "250", "500", "MINOR", "MAJOR", "MINI"];
 export const ULTRA_BOOST_VALUES = ["0", "0.5", "1", "2", "5", "10", "25", "50", "100"];
 
 export type UltraFeatureCoin = {

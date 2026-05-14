@@ -8,7 +8,7 @@ export const ZONE_COIN_COLORS = [
   { label: "Green(22)",    value: 22 },
   { label: "AllColor(31)", value: 31 },
 ];
-export const ZONE_COIN_VALUES = ["1", "2", "5", "MINOR", "MAJOR", "MINI"];
+export const ZONE_COIN_VALUES = ["100", "250", "500", "MINOR", "MAJOR", "MINI"];
 
 export type ZoneFeatureCoin = {
   position:  number;   // 0–14 column-major (col*3+row)
