@@ -52,7 +52,7 @@ export function generateUltraFeatureGaffe(
 
   let out = `[reelStopPositions:[${rsp.join(",")}]`;
   if (lc.length)         out += `,landedCoins:[${lc.map((c: any) => `[${c.join(",")}]`).join(",")}]`;
-  if (hasBoost)          out += `,boostValues:[${boostArr.join(",")}]`;
+  if (hasBoost)          out += `,isBoosted:true ,boostValues:[${boostArr.join(",")}]`;
   if (hasSide)           out += `,boostSide:[${sideArr.join(",")}]`;
   if (coins.length >= 22) out += `,lastPositionReel:bonus-boost`;
   if (upgrade)           out += `,goodPosition:[${upgrade.col},${upgrade.row}],additionalFeatureTriggered:[${upgrade.features.join(",")}]`;

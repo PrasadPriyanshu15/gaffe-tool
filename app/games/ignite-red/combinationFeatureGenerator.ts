@@ -161,7 +161,7 @@ export function generateCombinationGaffe(
     out += `,landedCoins:[${lc.map(c => `[${c.join(",")}]`).join(",")}]`;
 
   if (hasBoost)
-    out += `,boostValues:[${boostArr.join(",")}]`;
+    out += `,isBoosted:true,boostValues:[${boostArr.join(",")}]`;
 
   if (hasSide)
     out += `,boostSide:[${sideArr.join(",")}]`;
