@@ -71,7 +71,7 @@ export const ULTRA_COIN_COLORS = [
   { label: "AllColor(31)", value: 31 },
 ];
 export const ULTRA_COIN_VALUES  = ["100", "250", "500", "MINOR", "MAJOR", "MINI"];
-export const ULTRA_BOOST_VALUES = ["0", "0.5", "1", "2", "5", "10", "25", "50", "100"];
+export const ULTRA_BOOST_VALUES = ["0", "1", "2", "5", "10", "25", "50", "100"];
 
 export type UltraFeatureCoin = {
   position:   number;
@@ -119,6 +119,12 @@ export function generateUltraFeatureGaffe(
   if (hasSide)            out += `,boostSide:[${sideArr.join(",")}]`;
   if (coins.length >= 22) out += `,lastPositionReel:bonus-boost`;
   if (upgrade)            out += `,goodPosition:[${upgrade.col},${upgrade.row}],additionalFeatureTriggered:[${upgrade.features.join(",")}]`;
+
+   //! here
+    if (coins.length ===14)
+    out += `,lastPositionReel:bonus-boost`;
+  out += `]`;
+  
   out += `]`;
   return out;
 }

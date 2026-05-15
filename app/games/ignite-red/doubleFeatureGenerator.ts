@@ -41,6 +41,11 @@ export function generateDoubleFeatureGaffe(
   let out = `[reelStopPositions:[${rsp.join(",")}]`;
   if (lc.length) out += `,landedCoins:[${lc.map(c => `[${c.join(",")}]`).join(",")}]`;
   if (upgrade)   out += `,goodPosition:[${upgrade.col},${upgrade.row}],additionalFeatureTriggered:[${upgrade.features.join(",")}]`;
+
+   //! here
+    if (coins.length ===14)
+    out += `,lastPositionReel:bonus-boost`;
+  out += `]`;
   out += `]`;
   return out;
 }

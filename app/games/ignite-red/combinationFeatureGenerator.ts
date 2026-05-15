@@ -345,8 +345,16 @@ export function generateCombinationGaffe(
     out += `,zoneMultipliers:[${multipliers.join(",")}]`;
 
   // lastPositionReel when 22+ coins and extra or ultra active
-  if (coins.length >= 22 && (hasExtra || hasUltra))
+  // if (coins.length >= 22 && (hasExtra || hasUltra))
+  //   out += `,lastPositionReel:bonus-boost`;
+
+
+    //! changing here 
+   if (coins.length >= 22 && (hasDouble))
     out += `,lastPositionReel:bonus-boost`;
+   if (coins.length ===14  && (hasExtra || hasZone || hasUltra))
+    out += `,lastPositionReel:bonus-boost`;
+
 
   if (upgrade)
     out += `,goodPosition:[${upgrade.col},${upgrade.row}],additionalFeatureTriggered:[${upgrade.features.join(",")}]`;

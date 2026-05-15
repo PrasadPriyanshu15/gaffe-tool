@@ -63,6 +63,11 @@ export function generateZoneFeatureGaffe(
   if (splitter)           out += `,zoneSplitter:${splitter}`;
   if (multipliers.length) out += `,zoneMultipliers:[${multipliers.join(",")}]`;
   if (upgrade)            out += `,goodPosition:[${upgrade.col},${upgrade.row}],additionalFeatureTriggered:[${upgrade.features.join(",")}]`;
+
+   //! here
+    if (coins.length ===14)
+    out += `,lastPositionReel:bonus-boost`;
+  out += `]`;
   out += `]`;
   return out;
 }

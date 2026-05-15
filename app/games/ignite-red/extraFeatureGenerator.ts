@@ -37,6 +37,10 @@ export function generateExtraFeatureGaffe(
   if (lc.length)        out += `,landedCoins:[${lc.map((c: any) => `[${c.join(",")}]`).join(",")}]`;
   if (coins.length >= 22) out += `,lastPositionReel:bonus-boost`;
   if (upgrade)          out += `,goodPosition:[${upgrade.col},${upgrade.row}],additionalFeatureTriggered:[${upgrade.features.join(",")}]`;
+
+  //! here
+    if (coins.length ===14)
+    out += `,lastPositionReel:bonus-boost`;
   out += `]`;
   return out;
 }
