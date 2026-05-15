@@ -393,7 +393,7 @@ function buildGenericBaseCoins(reelStops: number[], scats: ScatsState): ZoneFeat
       const k = `${ri}-${idx}`;
       const s = scats.colors[k] as ScatType | undefined;
       const v = scats.values[k];
-      if (s) result.push({ position: ri * 3 + rowIdx, colorCode: SCAT_COLOR_CODE[s.key] ?? 4, value: v || "1", fromBase: true });
+      if (s) result.push({ position: ri * 3 + rowIdx, colorCode: SCAT_COLOR_CODE[s.key] ?? 4, value: v || "100", fromBase: true });
     });
   });
   return result;

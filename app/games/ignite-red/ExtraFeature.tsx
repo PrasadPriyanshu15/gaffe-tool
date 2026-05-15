@@ -1,3 +1,4 @@
+
 // /* eslint-disable @typescript-eslint/no-explicit-any */
 // "use client";
 
@@ -6,7 +7,7 @@
 //   ExtraFeatureCoin, EXTRA_COIN_COLORS, EXTRA_COIN_VALUES,
 //   UpgradeInfo, generateExtraFeatureGaffe,
 // } from "./extraFeatureGenerator";
-// import { posToMetric, UPGRADE_CODE_TO_FEATURES } from "./config";
+// import { posToMetric, FEATURE_UPGRADE_MAP, ALL_UPGRADE_FEATURES } from "./config";
 
 // type Props = {
 //   baseCoins:     ExtraFeatureCoin[];
@@ -59,14 +60,16 @@
 //     setUpgradePos(pos); setUpgradeFeatSel(""); setUpgradeMultiSel(new Set()); setPendingUpgrade(null);
 //   };
 
-//   // Determine if selected upgrade coin is allColor (19)
+//   // AllColor coin = colorCode 31 in EXTRA_COIN_COLORS (last entry)
+//   const EXTRA_ALLCOLOR_CODE = EXTRA_COIN_COLORS[EXTRA_COIN_COLORS.length - 1].value;
 //   const upgradeCoinn = upgradePos !== null ? coinAt(upgradePos) : null;
-//   const isAllColor   = upgradeCoinn?.colorCode === 19;
+//   const isAllColor   = upgradeCoinn?.colorCode === EXTRA_ALLCOLOR_CODE;
 
 //   // Options: features this coin can upgrade to, excluding EXTRA (already active)
 //   const upgradeOptions: string[] = (() => {
 //     if (!upgradeCoinn) return [];
-//     return (UPGRADE_CODE_TO_FEATURES[upgradeCoinn.colorCode] ?? []).filter(f => f !== "EXTRA");
+//     if (isAllColor) return ALL_UPGRADE_FEATURES.filter(f => f !== "EXTRA");
+//     return (FEATURE_UPGRADE_MAP["extra"][upgradeCoinn.colorCode] ?? []).filter(f => f !== "EXTRA");
 //   })();
 
 //   // For allColor multi-select toggle
@@ -245,6 +248,7 @@
 // }
 
 
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -263,13 +267,16 @@ type Props = {
   onUpgrade:     (newFeatures: string[], carryCoins: ExtraFeatureCoin[]) => void;
 };
 
-const MAX_SPINS = 4;
+const MAX_SPINS = 4; // Extra = 4 spins
 
 const COIN_SELECT_BG: Record<number, string> = {
-  4: "bg-orange-700", 13: "bg-blue-700", 22: "bg-pink-700", 31: "bg-indigo-700",
+  4: "bg-red-800", 13: "bg-fuchsia-800", 22: "bg-blue-800", 31: "bg-indigo-800",
 };
-const CELL_BORDER: Record<number, string> = {
-  4: "border-orange-500", 13: "border-blue-500", 22: "border-pink-500", 31: "border-indigo-500",
+
+type UpgradeCoinExtra = {
+  leftValue?:  string;
+  rightValue?: string;
+  boostValue?: string;
 };
 
 export default function ExtraFeature({ baseCoins, onCoinsChange, onSpin, onReset, onUpgrade }: Props) {
@@ -280,10 +287,9 @@ export default function ExtraFeature({ baseCoins, onCoinsChange, onSpin, onReset
   const lastPos = useRef<Set<number>>(new Set(init.map(c => c.position)));
 
   const [upgradePos,      setUpgradePos]      = useState<number | null>(null);
-  // For single-color: one selected feature string; for allColor: multiple via Set
   const [upgradeFeatSel,  setUpgradeFeatSel]  = useState<string>("");
   const [upgradeMultiSel, setUpgradeMultiSel] = useState<Set<string>>(new Set());
-  const [pendingUpgrade,  setPendingUpgrade]  = useState<UpgradeInfo | null>(null);
+  const [upgradeExtra, setUpgradeExtra] = useState<UpgradeCoinExtra>({});
 
   const coinAt = (pos: number) => coins.find(c => c.position === pos);
 
@@ -293,162 +299,213 @@ export default function ExtraFeature({ baseCoins, onCoinsChange, onSpin, onReset
   };
   const removeCoin = (pos: number) => {
     if (coinAt(pos)?.fromBase) return;
-    if (upgradePos === pos) { setUpgradePos(null); setUpgradeFeatSel(""); setUpgradeMultiSel(new Set()); setPendingUpgrade(null); }
+    if (upgradePos === pos) resetUpgradeState();
     setCoins(prev => prev.filter(c => c.position !== pos));
   };
   const updateCoin = (pos: number, field: keyof ExtraFeatureCoin, val: any) =>
     setCoins(prev => prev.map(c => c.position === pos ? { ...c, [field]: val } : c));
 
-  const handleUpgradeRadio = (pos: number) => {
-    if (upgradePos === pos) {
-      setUpgradePos(null); setUpgradeFeatSel(""); setUpgradeMultiSel(new Set()); setPendingUpgrade(null); return;
-    }
-    setUpgradePos(pos); setUpgradeFeatSel(""); setUpgradeMultiSel(new Set()); setPendingUpgrade(null);
+  const resetUpgradeState = () => {
+    setUpgradePos(null);
+    setUpgradeFeatSel("");
+    setUpgradeMultiSel(new Set());
+    setUpgradeExtra({});
   };
 
-  // AllColor coin = colorCode 31 in EXTRA_COIN_COLORS (last entry)
-  const EXTRA_ALLCOLOR_CODE = EXTRA_COIN_COLORS[EXTRA_COIN_COLORS.length - 1].value;
-  const upgradeCoinn = upgradePos !== null ? coinAt(upgradePos) : null;
-  const isAllColor   = upgradeCoinn?.colorCode === EXTRA_ALLCOLOR_CODE;
+  const handleUpgradeRadio = (pos: number) => {
+    if (upgradePos === pos) { resetUpgradeState(); return; }
+    resetUpgradeState();
+    setUpgradePos(pos);
+  };
 
-  // Options: features this coin can upgrade to, excluding EXTRA (already active)
+  const handleFeatSelChange = (feat: string) => {
+    setUpgradeFeatSel(feat);
+    setUpgradeExtra({});
+  };
+
+  const upgradeCoinn = upgradePos !== null ? coinAt(upgradePos) : null;
+  const EXTRA_ALLCOLOR_CODE = EXTRA_COIN_COLORS[EXTRA_COIN_COLORS.length - 1].value;
+  const isAllColor = upgradeCoinn?.colorCode === EXTRA_ALLCOLOR_CODE;
+
   const upgradeOptions: string[] = (() => {
     if (!upgradeCoinn) return [];
     if (isAllColor) return ALL_UPGRADE_FEATURES.filter(f => f !== "EXTRA");
     return (FEATURE_UPGRADE_MAP["extra"][upgradeCoinn.colorCode] ?? []).filter(f => f !== "EXTRA");
   })();
 
-  // For allColor multi-select toggle
   const toggleMulti = (f: string) => {
     setUpgradeMultiSel(prev => {
       const next = new Set(prev);
       if (next.has(f)) next.delete(f); else next.add(f);
       return next;
     });
+    setUpgradeExtra({});
   };
+
+  const selectedFeats: string[] = isAllColor ? Array.from(upgradeMultiSel) : upgradeFeatSel ? [upgradeFeatSel] : [];
+  const upgradeNeedsDouble = selectedFeats.includes("DOUBLE");
+  const upgradeNeedsUltra  = selectedFeats.includes("ULTRA");
+
+  const canUpgradeSpin = upgradePos !== null && selectedFeats.length > 0;
 
   const handleSpin = () => {
     if (spinsLeft <= 0) return;
+
     const cur = new Set(coins.map(c => c.position));
     const hasNew = [...cur].some(p => !lastPos.current.has(p));
     setSpinsLeft(hasNew ? MAX_SPINS : spinsLeft - 1);
     lastPos.current = cur;
     onCoinsChange(coins);
 
-    let upgrade: UpgradeInfo | null = null;
-    if (upgradePos !== null && upgradeCoinn) {
-      const selectedFeats = isAllColor
-        ? Array.from(upgradeMultiSel)
-        : upgradeFeatSel ? [upgradeFeatSel] : [];
-      if (selectedFeats.length > 0) {
-        upgrade = {
-          col: Math.floor(upgradePos / 3),
-          row: upgradePos % 3,
-          features: selectedFeats,
-        };
-        setPendingUpgrade(upgrade);
-      }
+    if (canUpgradeSpin && upgradePos !== null) {
+      const upgrade: UpgradeInfo = {
+        col: Math.floor(upgradePos / 3),
+        row: upgradePos % 3,
+        features: selectedFeats,
+      };
+      onSpin(generateExtraFeatureGaffe(coins, upgrade));
+      const newFeatures = [...new Set(["extra", ...upgrade.features.map(f => f.toLowerCase())])];
+      onUpgrade(newFeatures, coins);
+    } else {
+      onSpin(generateExtraFeatureGaffe(coins, null));
     }
-    onSpin(generateExtraFeatureGaffe(coins, upgrade));
   };
 
   const reset = () => {
     const s = baseCoins.map(c => ({ ...c, fromBase: true }));
-    setCoins(s); setSpinsLeft(MAX_SPINS);
+    setCoins(s);
+    setSpinsLeft(MAX_SPINS);
     lastPos.current = new Set(s.map(c => c.position));
-    setUpgradePos(null); setUpgradeFeatSel(""); setUpgradeMultiSel(new Set()); setPendingUpgrade(null);
+    resetUpgradeState();
     onReset();
   };
 
-  const handleGoToUpgrade = () => {
-    if (!pendingUpgrade) return;
-    const newFeatures = [...new Set(["extra", ...pendingUpgrade.features.map(f => f.toLowerCase())])];
-    onUpgrade(newFeatures, coins);
-  };
-
-  const filled14 = coins.length >= 14;
+  const filled22 = coins.length >= 22;
 
   return (
     <div className="bg-gray-800 rounded-xl border border-green-700">
       <div onClick={() => setIsOpen(!isOpen)} className="flex justify-between items-center p-4 cursor-pointer select-none">
         <div className="flex items-center gap-3">
           <h2 className="text-green-400 font-bold font-mono">🟢 Extra Feature</h2>
-          {filled14 && <span className="text-yellow-400 text-xs font-mono bg-yellow-900/40 px-2 py-0.5 rounded border border-yellow-700">⚠ 14 filled → lastPositionReel on next spin</span>}
+          {filled22 && <span className="text-yellow-400 text-xs font-mono bg-yellow-900/40 px-2 py-0.5 rounded border border-yellow-700">⚠ 22 filled → lastPositionReel</span>}
         </div>
         <span className="text-gray-500">{isOpen ? "▼" : "▶"}</span>
       </div>
 
       {isOpen && (
         <div className="p-4 pt-0 flex flex-col gap-3">
+          {/* SPIN CONTROLS */}
           <div className="flex items-center gap-3 flex-wrap">
-            <button onClick={handleSpin} disabled={spinsLeft <= 0}
-              className={`px-5 py-1.5 rounded font-bold font-mono transition-all ${spinsLeft > 0 ? "bg-green-600 hover:bg-green-500" : "bg-gray-600 opacity-50 cursor-not-allowed"}`}>
-              SPIN
+            <button
+              onClick={handleSpin}
+              disabled={spinsLeft <= 0}
+              className={`px-5 py-1.5 rounded font-bold font-mono transition-all ${
+                canUpgradeSpin
+                  ? "bg-yellow-600 hover:bg-yellow-500 ring-2 ring-yellow-400"
+                  : spinsLeft > 0
+                    ? "bg-green-600 hover:bg-green-500"
+                    : "bg-gray-600 opacity-50 cursor-not-allowed"
+              }`}>
+              {canUpgradeSpin ? `✦ SPIN + Go to extra+${selectedFeats.map(f => f.toLowerCase()).join("+")}` : "SPIN"}
             </button>
-            <span className="text-sm text-gray-400 font-mono">{spinsLeft} spin{spinsLeft !== 1 ? "s" : ""} left</span>
+            <span className="text-sm text-gray-400 font-mono">{spinsLeft} spin{spinsLeft !== 1 ? "s" : ""} left <span className="text-emerald-400 text-xs">(4 — Extra)</span></span>
             <button onClick={reset} className="px-3 py-1 bg-gray-600 hover:bg-gray-500 rounded text-sm">Reset</button>
           </div>
 
-          {/* Upgrade confirmed → show Go To button */}
-          {pendingUpgrade && pendingUpgrade.features.length > 0 && (
-            <div className="flex items-center gap-3 bg-yellow-900/30 border border-yellow-700 rounded-lg p-3">
-              <span className="text-yellow-300 text-sm font-mono">✦ Upgrade ready:</span>
-              <button onClick={handleGoToUpgrade} className="px-4 py-1.5 bg-yellow-600 hover:bg-yellow-500 rounded font-bold text-sm font-mono">
-                Go to extra + {pendingUpgrade.features.map(f => f.toLowerCase()).join(" + ")}
-              </button>
-              <button onClick={() => { setPendingUpgrade(null); setUpgradeFeatSel(""); setUpgradeMultiSel(new Set()); setUpgradePos(null); }} className="text-gray-400 hover:text-red-400 text-xs">✕</button>
-            </div>
-          )}
-
-          {/* Upgrade coin selected → show feature selector */}
-          {upgradePos !== null && !pendingUpgrade && upgradeOptions.length > 0 && (
-            <div className="flex flex-col gap-2 bg-yellow-900/20 border border-yellow-800 rounded-lg p-2">
-              <span className="text-yellow-300 text-xs font-mono">
-                Upgrade {posToMetric(upgradePos)} →
-                {isAllColor
-                  ? " AllColor coin: select multiple features"
-                  : " Single-color coin: select 1 feature"}
+          {/* UPGRADE PANEL */}
+          {upgradePos !== null && upgradeOptions.length > 0 && (
+            <div className="flex flex-col gap-2 bg-yellow-900/20 border border-yellow-700 rounded-lg p-3">
+              <span className="text-yellow-300 text-xs font-mono font-bold">
+                ✦ Upgrade coin at {posToMetric(upgradePos)} →
+                {isAllColor ? " select features (multi)" : " select feature"}
               </span>
+
               {isAllColor ? (
-                // Multi-select checkboxes for allColor coin
                 <div className="flex gap-2 flex-wrap">
-                  {upgradeOptions.map(f => {
-                    const checked = upgradeMultiSel.has(f);
-                    return (
-                      <label key={f} className="flex items-center gap-1 cursor-pointer bg-yellow-900/40 border border-yellow-700 rounded px-2 py-1">
-                        <input type="checkbox" className="accent-yellow-400 w-3 h-3"
-                          checked={checked} onChange={() => toggleMulti(f)} />
-                        <span className="text-yellow-100 text-xs font-mono">{f}</span>
-                      </label>
-                    );
-                  })}
+                  {upgradeOptions.map(f => (
+                    <label key={f} className="flex items-center gap-1 cursor-pointer bg-yellow-900/40 border border-yellow-700 rounded px-2 py-1">
+                      <input type="checkbox" className="accent-yellow-400 w-3 h-3"
+                        checked={upgradeMultiSel.has(f)} onChange={() => toggleMulti(f)} />
+                      <span className="text-yellow-100 text-xs font-mono">{f}</span>
+                    </label>
+                  ))}
                 </div>
               ) : (
-                // Single-select dropdown for single-color coin
-                <select className="bg-yellow-900 text-yellow-100 text-xs rounded px-2 py-1 font-mono border border-yellow-700 self-start"
-                  value={upgradeFeatSel} onChange={e => setUpgradeFeatSel(e.target.value)}>
-                  <option value="">Select feature...</option>
+                <select
+                  className="bg-yellow-900 text-yellow-100 text-xs rounded px-2 py-1 font-mono border border-yellow-700 self-start"
+                  value={upgradeFeatSel}
+                  onChange={e => handleFeatSelChange(e.target.value)}>
+                  <option value="">Select feature to add…</option>
                   {upgradeOptions.map(f => <option key={f} value={f}>{f}</option>)}
                 </select>
               )}
-              {((isAllColor && upgradeMultiSel.size > 0) || (!isAllColor && upgradeFeatSel)) && (
-                <span className="text-yellow-400 text-xs font-mono">→ SPIN to confirm</span>
+
+              {/* Adapted extra fields */}
+              {selectedFeats.length > 0 && (
+                <div className="flex flex-col gap-1.5 bg-yellow-950/40 border border-yellow-800/50 rounded p-2 mt-1">
+                  <span className="text-yellow-400 text-[10px] font-mono">
+                    Extra fields for upgrade coin (optional):
+                  </span>
+                  {upgradeNeedsDouble && (
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[9px] text-red-300 font-mono w-14 shrink-0">←L value</span>
+                        <select className="bg-red-950 text-red-200 text-[9px] rounded px-1 py-0.5 font-mono border-0"
+                          value={upgradeExtra.leftValue || ""}
+                          onChange={e => setUpgradeExtra(prev => ({ ...prev, leftValue: e.target.value }))}>
+                          <option value="">--</option>
+                          {EXTRA_COIN_VALUES.map(v => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[9px] text-red-300 font-mono w-14 shrink-0">R→ value</span>
+                        <select className="bg-red-950 text-red-200 text-[9px] rounded px-1 py-0.5 font-mono border-0"
+                          value={upgradeExtra.rightValue || ""}
+                          onChange={e => setUpgradeExtra(prev => ({ ...prev, rightValue: e.target.value }))}>
+                          <option value="">--</option>
+                          {EXTRA_COIN_VALUES.map(v => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                  {upgradeNeedsUltra && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-[9px] text-purple-300 font-mono w-14 shrink-0">Boost</span>
+                      <select className="bg-purple-950 text-purple-200 text-[9px] rounded px-1 py-0.5 font-mono border-0"
+                        value={upgradeExtra.boostValue || ""}
+                        onChange={e => setUpgradeExtra(prev => ({ ...prev, boostValue: e.target.value }))}>
+                        <option value="">--</option>
+                        {["0","0.5","1","2","5","10","25","50","100"].map(v => <option key={v} value={v}>{v}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  <span className="text-yellow-400 text-[9px] font-mono mt-0.5">
+                    → Hit SPIN to generate output and switch to the new feature layout
+                  </span>
+                </div>
               )}
             </div>
           )}
           {upgradePos !== null && upgradeOptions.length === 0 && (
-            <div className="text-xs text-gray-500 font-mono bg-gray-700 px-3 py-1.5 rounded">ℹ No upgrades available from this coin color</div>
+            <div className="text-xs text-gray-500 font-mono bg-gray-700 px-3 py-1.5 rounded">
+              ℹ No upgrades available from this coin color
+            </div>
           )}
 
+          {/* GRID */}
           <div className="grid gap-1" style={{ gridTemplateColumns: "repeat(5, minmax(0,1fr))" }}>
             {Array.from({ length: 3 }).map((_, row) =>
               Array.from({ length: 5 }).map((_, col) => {
                 const pos  = col * 3 + row;
                 const coin = coinAt(pos);
+                const isUpgradeCoin = upgradePos === pos;
                 return (
                   <div key={pos} onClick={() => !coin && addCoin(pos)}
-                    className={`relative rounded-lg border-2 flex flex-col items-center p-1 min-h-[95px] text-xs text-white cursor-pointer transition-all hover:brightness-110
-                      ${coin ? `bg-gray-700 ${CELL_BORDER[coin.colorCode] ?? "border-gray-500"}` : "bg-gray-700 border-gray-600 hover:bg-gray-600 hover:border-gray-400"}`}>
+                    className={`relative rounded-lg border-2 flex flex-col items-center p-1 min-h-[95px] text-xs text-white cursor-pointer transition-all hover:brightness-110 ${
+                      coin
+                        ? `${COIN_SELECT_BG[coin.colorCode] ?? "bg-gray-700"} ${isUpgradeCoin ? "border-yellow-400 ring-2 ring-yellow-400" : "border-green-600/60"}`
+                        : "bg-gray-700 border-gray-600 hover:bg-gray-600 hover:border-green-600/40"
+                    }`}>
                     <div className="flex justify-between w-full text-[9px] opacity-40">
                       <span>{pos}</span><span className="font-mono">{posToMetric(pos)}</span>
                     </div>
@@ -467,8 +524,11 @@ export default function ExtraFeature({ baseCoins, onCoinsChange, onSpin, onReset
                         </select>
                         <div className="flex items-center gap-1 mt-0.5" onClick={e => e.stopPropagation()}>
                           <input type="radio" name="extraUpgrade" className="accent-yellow-400 w-3 h-3 cursor-pointer"
-                            checked={upgradePos === pos} onChange={() => handleUpgradeRadio(pos)} />
+                            checked={isUpgradeCoin} onChange={() => handleUpgradeRadio(pos)} />
                           <span className="text-[8px] text-yellow-300 font-mono">upgrade</span>
+                          {isUpgradeCoin && selectedFeats.length > 0 && (
+                            <span className="text-[7px] text-yellow-500 font-mono">→{selectedFeats.join("+")}</span>
+                          )}
                         </div>
                         {!coin.fromBase && (
                           <button onClick={e => { e.stopPropagation(); removeCoin(pos); }}
@@ -483,9 +543,10 @@ export default function ExtraFeature({ baseCoins, onCoinsChange, onSpin, onReset
               })
             )}
           </div>
+
           <div className="text-[10px] text-gray-600 font-mono">
-            🟡 click empty cell to add · ✕ remove · ✦ radio = upgrade trigger
-            · single-color = 1 upgrade · AllColor = multi-upgrade
+            🟢 click empty cell to add · ✕ remove · radio = upgrade trigger
+            · select feature → fill extra fields → SPIN generates + switches in one click
           </div>
         </div>
       )}
