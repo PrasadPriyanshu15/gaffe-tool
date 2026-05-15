@@ -19,9 +19,14 @@ export const games = [
     name: "Triple Piggy pays",
     path: "/games/tpp"
   },
-   {
-    id: "game-5",
-    name: "Ignite Red",
-    path: "/games/ignite-red"
+  //  {
+  //   id: "game-5",
+  //   name: "Ignite Red",
+  //   path: "/games/ignite-red"
+  // },
+  {
+    id: "game-6",
+    name: "Red Ignitee",
+    path: "/games/red"
   }
 ];
