@@ -563,7 +563,7 @@ export default function Home() {
                   ...(upgradeInfo.zoneMultipliers ? { zoneMultipliers: upgradeInfo.zoneMultipliers } : {}),
                 };
                 const hasStrike = newFeatures.includes("strike");
-                const comboCoinsSeed: ComboCoin[] = carryCoins.map((c: any) => ({
+                const comboCoinsSeed: ComboCoin[] = carryCoins.map((c) => ({
                   position: c.position, colorCode: c.colorCode, value: c.value,
                   ...(hasStrike ? { winged: false } : {}),
                   fromBase: true,
@@ -588,7 +588,7 @@ export default function Home() {
                   ...(upgradeInfo.zoneMultipliers ? { zoneMultipliers: upgradeInfo.zoneMultipliers } : {}),
                 };
                 const hasStrike = newFeatures.includes("strike");
-                const comboCoinsSeed: ComboCoin[] = carryCoins.map((c: any) => ({
+                const comboCoinsSeed: ComboCoin[] = carryCoins.map((c) => ({
                   position: c.position, colorCode: c.colorCode, value: c.value,
                   ...(hasStrike ? { winged: false } : {}),
                   fromBase: true,
@@ -611,7 +611,7 @@ export default function Home() {
                   ...(upgradeInfo.zoneSplitter    ? { zoneSplitter:    upgradeInfo.zoneSplitter    } : {}),
                   ...(upgradeInfo.zoneMultipliers ? { zoneMultipliers: upgradeInfo.zoneMultipliers } : {}),
                 };
-                const comboCoinsSeed: ComboCoin[] = carryCoins.map((c: any) => ({
+                const comboCoinsSeed: ComboCoin[] = carryCoins.map((c) => ({
                   position: c.position, colorCode: c.colorCode, value: c.value,
                   winged: (c as StrikeFeatureCoin).winged,
                   boostValue: (c as StrikeFeatureCoin).boostValue,
@@ -640,7 +640,7 @@ export default function Home() {
                 };
                 const comboCoinsSeed: ComboCoin[] = splitCarryCoins.map((c) => ({
                   position: c.position, colorCode: c.colorCode, value: c.value,
-                  wingedCopyIdx: c.wingedCopyIdx, splitCount: c.splitCount,
+                  wingedCopyIdx: c.wingedCopyIdxs, splitCount: c.splitCount,
                   splitCopyValues: c.splitCopyValues, splitBoostValues: c.splitBoostValues,
                   fromBase: true,
                 }));
