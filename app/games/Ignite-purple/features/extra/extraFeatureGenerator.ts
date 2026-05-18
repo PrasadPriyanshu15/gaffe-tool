@@ -1,3 +1,8 @@
+
+
+
+
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 // Extra feature coin colors (numeric codes used in output)
@@ -19,13 +24,20 @@ export type ExtraFeatureCoin = {
   fromBase?: boolean;     // pre-seeded from base game scats
 };
 
+export type UpgradeInfoSingle = {
+  pos:              number;     // coin position (0-14)
+  features:         string[];   // e.g. ["STRIKE"] or ["ZONE","SPLIT"]
+  zoneSplitter?:    number;
+  zoneMultipliers?: number[];
+};
+
 /**
  * Generate the Extra Feature output line.
  *
  * reelStopPositions: 15-element array — 0 = empty, colorCode = coin present
  * landedCoinsInBonusBoost: [[position, colorCode, value], ...]
  */
-export function generateExtraFeatureGaffe(coins: ExtraFeatureCoin[]): string {
+export function generateExtraFeatureGaffe(coins: ExtraFeatureCoin[], upgrade?: UpgradeInfoSingle | null): string {
   // Build 15-slot reelStopPositions array
   const reelStopPositions = Array(15).fill(0);
 
@@ -46,6 +58,16 @@ export function generateExtraFeatureGaffe(coins: ExtraFeatureCoin[]): string {
   }
 
   result +=`]`;
+
+  if (upgrade && upgrade.features.length > 0) {
+    result = result.slice(0, -1); // remove trailing ]
+    result += `, additionalFeatureTriggered: [${upgrade.features.map((f) => f.toLowerCase()).join(",")}]`;
+    if (upgrade.zoneSplitter)
+      result += `, upgradeZoneSplitter: ${upgrade.zoneSplitter}`;
+    if (upgrade.zoneMultipliers && upgrade.zoneMultipliers.length > 0)
+      result += `, upgradeZoneMultipliers: [${upgrade.zoneMultipliers.join(",")}]`;
+    result += `]`;
+  }
 
   return result;
 }

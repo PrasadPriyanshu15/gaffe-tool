@@ -118,7 +118,7 @@
 // }
 
 
-
+//! latest working vorrect
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { reels } from "./reels";
 import { ScatType, posToCol, posToRow } from "./config";
