@@ -716,7 +716,7 @@ export default function DoubleFeature({ baseCoins, onCoinsChange, onSpin, onRese
               );
             }))}
           </div>
-          <div className="text-[10px] text-gray-600 font-mono">🔴 click empty to add · L/R values · ✦ upgrade radio → pick feature → navigates to combo · SPIN in new layout confirms</div>
+          {/* <div className="text-[10px] text-gray-600 font-mono">🔴 click empty to add · L/R values · ✦ upgrade radio → pick feature → navigates to combo · SPIN in new layout confirms</div> */}
         </div>
       )}
     </div>

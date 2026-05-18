@@ -846,10 +846,10 @@ export default function UltraFeature({ baseCoins, isDoubleCombo, onCoinsChange, 
               );
             }))}
           </div>
-          <div className="text-[10px] text-gray-600 font-mono">
+          {/* <div className="text-[10px] text-gray-600 font-mono">
             🟡 click empty to add · ✕ remove · ✦ upgrade radio → pick feature → navigates to combo · SPIN in new layout confirms
             {isDoubleCombo && " · L/R boost = which side gets boost"}
-          </div>
+          </div> */}
         </div>
       )}
     </div>

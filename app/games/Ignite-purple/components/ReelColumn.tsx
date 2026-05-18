@@ -362,7 +362,7 @@ type Props = {
 const SCAT_OPTIONS: ScatType[] = [
   { key: "orange", label: "StrikeScat",    feature: "strike" },
   { key: "blue",   label: "ZoneScat",      feature: "zone"   },
-  { key: "cerise", label: "CeriseScat",    feature: "split"  },
+  { key: "cerise", label: "SplitScat",    feature: "split"  },
   { key: "green",  label: "ExtraScat",     feature: "extra"  },
   { key: "all",    label: "AllScat",  feature: "all"    },
 ];
