@@ -442,7 +442,7 @@ export function generateWheelGaffe(
     if (prevSnap.has(pos)) return;                          // not new this spin
 
     if (cell.type === "GOLD") {
-      parts.push(`reelstripCOR_${pos}:[,${cell.value}]`);
+      parts.push(`reelstripCOR_${pos}:[${cell.value}]`);
     } else if (cell.type === "RED") {
       const seqVal = RED_COIN_SEQUENCE[rIdx] ?? RED_COIN_SEQUENCE[RED_COIN_SEQUENCE.length - 1];
       parts.push(`reelstripCOR_${pos}:[${seqVal},${cell.value}]`);
