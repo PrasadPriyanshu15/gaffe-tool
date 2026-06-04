@@ -107,7 +107,7 @@ function formatGaffe(gaffe: Record<string, any>): string {
   if (gaffe.triggerFeatures === false) {
     parts.push(`triggerFeatures: false`);
   } else if (Array.isArray(gaffe.triggerFeatures) && gaffe.triggerFeatures.length > 0) {
-    parts.push(`triggerFeatures: [${gaffe.triggerFeatures.join(",")}]`);
+    parts.push(`triggerFeatures: ${gaffe.triggerFeatures.join(",")}`);
   }
 
   if (gaffe.landedCoins?.length > 0) {
