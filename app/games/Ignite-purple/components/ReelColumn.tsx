@@ -367,9 +367,9 @@ const SCAT_OPTIONS: ScatType[] = [
   { key: "all",    label: "AllScat",  feature: "all"    },
 ];
 
-const VALUE_OPTIONS        = ["1", "2", "5", "Minor", "Major" , "Mini"];
+const VALUE_OPTIONS        = ["1", "2", "5","100" ,"Minor", "Major" , "Mini"];
 const ZONE_SPLITTER_OPTIONS = ["1","2","3","4","5","6","7"];
-const BOOST_VALUE_OPTIONS  = ["0", "0.5", "1", "2", "5"];
+const BOOST_VALUE_OPTIONS  = ["0", "0.5", "1", "2", "5" , "50"];
 const SPLIT_COUNT_OPTIONS  = ["1", "2", "3", "4"];
 
 export default function ReelColumn({
