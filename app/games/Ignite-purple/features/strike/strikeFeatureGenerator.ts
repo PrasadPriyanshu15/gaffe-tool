@@ -106,10 +106,10 @@ export const STRIKE_COIN_COLORS = [
   { label: "All-Scat (19)", value: 19 },
 ];
 
-export const STRIKE_COIN_VALUES = ["1", "2", "5", "Minor", "Major" , "Mini"];
+export const STRIKE_COIN_VALUES = ["1", "2", "5","100",  "Minor", "Major" , "Mini"];
 
 // Boost values selectable per winged coin position
-export const STRIKE_BOOST_VALUES = ["0", "0.5", "1", "2", "5"];
+export const STRIKE_BOOST_VALUES = ["0", "0.5", "1", "2", "5" ,"50"];
 
 export type StrikeFeatureCoin = {
   position: number;       // 0–14, column-major (col*3+row)

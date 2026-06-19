@@ -2763,7 +2763,7 @@ import { STRIKE_BOOST_VALUES } from "../strike/strikeFeatureGenerator";
 import { SPLIT_COUNT_OPTIONS, SPLIT_BOOST_VALUES } from "../split/splitFeatureGenerator";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const COMBO_COIN_VALUES = ["1", "2", "5", "Minor", "Major", "Mini"];
+const COMBO_COIN_VALUES = ["1", "2", "5", "100" , "Minor", "Major", "Mini"];
 const ZONE_SPLITTER_OPTIONS = [1, 2, 3, 4, 5];
 
 const FEATURE_BADGE: Record<string, string> = {

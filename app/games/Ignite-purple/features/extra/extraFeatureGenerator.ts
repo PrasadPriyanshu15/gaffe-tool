@@ -15,7 +15,7 @@ export const EXTRA_COIN_COLORS = [
   { label: "AllColor (19)", value: 19 },
 ];
 
-export const EXTRA_COIN_VALUES = ["1", "2", "5", "Minor", "Major" , "Mini"];
+export const EXTRA_COIN_VALUES = ["1", "2", "5" , "100", "Minor", "Major" , "Mini"];
 
 export type ExtraFeatureCoin = {
   position: number;       // 0–14

@@ -199,8 +199,8 @@ export const SPLIT_COIN_COLORS = [
   { label: "Green (14)",     value: 14 },
 ];
 
-export const SPLIT_COIN_VALUES   = ["1", "2", "5", "Minor", "Major", "Mini"];
-export const SPLIT_BOOST_VALUES  = ["0", "0.5", "1", "2", "5"];
+export const SPLIT_COIN_VALUES   = ["1", "2", "5", "100","Minor", "Major", "Mini"];
+export const SPLIT_BOOST_VALUES  = ["0", "0.5", "1", "2", "5" , "50"];
 export const SPLIT_COUNT_OPTIONS = [1, 2, 3, 4];
 
 // Features this game supports (used in upgrade panel)

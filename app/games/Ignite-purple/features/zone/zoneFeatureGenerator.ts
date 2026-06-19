@@ -232,7 +232,7 @@ export const ZONE_COIN_COLORS = [
   { label: "All-Color (19)", value: 19 },
 ];
 
-export const ZONE_COIN_VALUES = ["1", "2", "5", "Minor", "Major" , "Mini"];
+export const ZONE_COIN_VALUES = ["1", "2", "5", "100" , "Minor", "Major" , "Mini"];
 
 export type ZoneFeatureCoin = {
   position: number;    // 0–14, column-major (col*3+row)

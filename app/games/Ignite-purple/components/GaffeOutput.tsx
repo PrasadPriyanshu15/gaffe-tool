@@ -2,57 +2,39 @@
 
 
 // /* eslint-disable @typescript-eslint/no-explicit-any */
-
 // "use client";
 
 // import { useState } from "react";
 
 // type Props = {
 //   gaffe: any;
-//   featureGaffes?: string[]; // each is a pre-formatted feature output line
+//   featureGaffes?: string[];
 // };
 
 // function formatGaffe(gaffe: any) {
 //   let result = `[reelStopPositions: [${gaffe.reelStopPositions.join(",")}]`;
 
-//   // 🎯 SCAT OUTPUT
-//   if (gaffe.scatReplacement && gaffe.scatReplacement.length > 0) {
+//   if (gaffe.scatReplacement?.length > 0)
 //     result += `, scatterType: [${gaffe.scatReplacement.join(", ")}]`;
-//   }
 
-//   // 🪙 LANDED COINS
-//   if (gaffe.landedCoins && gaffe.landedCoins.length > 0) {
-//     const coinsFormatted = gaffe.landedCoins
-//       .map((coin: any) => `[${coin[0]},${coin[1]},${coin[2]}]`)
+//   // landedCoins — each entry may have 3 or 4 elements (4th = split count)
+//   if (gaffe.landedCoins?.length > 0) {
+//     const fmt = gaffe.landedCoins
+//       .map((coin: any[]) => `[${coin.join(",")}]`)
 //       .join(",");
-//     result += `, landedCoins: [${coinsFormatted}]`;
+//     result += `, landedCoins: [${fmt}]`;
 //   }
 
-//   // 🎯 FEATURE OUTPUT
-//   if (gaffe.featureTriggered && gaffe.featureTriggered.length > 0) {
-//     result += `, featureTriggered: [${gaffe.featureTriggered.join(", ")}]`;
-//   }
+//   if (gaffe.featureTriggered?.length > 0)
+//     result += `,featureTriggered: [${gaffe.featureTriggered.join(",")}]`;
 
-//   // ⭐ GRAND
-//   result += `, canGrandTrigger: ${gaffe.canGrandTrigger}`;
+//   result += `,canGrandTrigger: ${gaffe.canGrandTrigger}`;
 
-//   // 🔵 ZONE SPLITTER
-//   if (gaffe.zoneSplitter !== undefined) {
-//     result += `, zoneSplitter: ${gaffe.zoneSplitter}`;
-//   }
-
-//   // 🔵 ZONE MULTIPLIERS
-//   if (gaffe.zoneMultipliers !== undefined) {
-//     result += `, zoneMultipliers: [${gaffe.zoneMultipliers.join(",")}]`;
-//   }
-
-//   // ⚡ BOOST VALUES
-//   if (gaffe.boostValues !== undefined) {
-//     result += `, boostValues: [${gaffe.boostValues.join(",")}]`;
-//   }
+//   if (gaffe.zoneSplitter !== undefined)    result += `, zoneSplitter: ${gaffe.zoneSplitter}`;
+//   if (gaffe.zoneMultipliers !== undefined) result += `, zoneMultipliers: [${gaffe.zoneMultipliers.join(",")}]`;
+//   if (gaffe.boostValues !== undefined)     result += `, boostValues: [${gaffe.boostValues.join(",")}]`;
 
 //   result += `]`;
-
 //   return result;
 // }
 
@@ -60,8 +42,8 @@
 //   const [copied, setCopied] = useState(false);
 
 //   const baseFormatted = formatGaffe(gaffe);
-//   const lines = [baseFormatted, ...(featureGaffes ?? [])];
-//   const finalOutput = lines.join("\n");
+//   const lines         = [baseFormatted, ...(featureGaffes ?? [])];
+//   const finalOutput   = lines.join("\n");
 
 //   const handleCopy = () => {
 //     navigator.clipboard.writeText(finalOutput);
@@ -82,9 +64,7 @@
 //       <button
 //         onClick={handleCopy}
 //         className={`px-4 py-2 rounded transition-all duration-300 ${
-//           copied
-//             ? "bg-green-500 scale-110 shadow-lg"
-//             : "bg-green-700 hover:bg-green-600"
+//           copied ? "bg-green-500 scale-110 shadow-lg" : "bg-green-700 hover:bg-green-600"
 //         }`}
 //       >
 //         {copied ? "Copied!" : "Copy"}
@@ -92,6 +72,8 @@
 //     </div>
 //   );
 // }
+
+
 
 
 
@@ -127,6 +109,7 @@ function formatGaffe(gaffe: any) {
   if (gaffe.zoneSplitter !== undefined)    result += `, zoneSplitter: ${gaffe.zoneSplitter}`;
   if (gaffe.zoneMultipliers !== undefined) result += `, zoneMultipliers: [${gaffe.zoneMultipliers.join(",")}]`;
   if (gaffe.boostValues !== undefined)     result += `, boostValues: [${gaffe.boostValues.join(",")}]`;
+  if (gaffe.numberOfSplitCoin !== undefined) result += `, numberOfSplitCoins: [${gaffe.numberOfSplitCoin.join(",")}]`;
 
   result += `]`;
   return result;
