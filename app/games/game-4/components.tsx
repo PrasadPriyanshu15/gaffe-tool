@@ -1021,9 +1021,9 @@ export function ControlPanel({ onCreate, fields, setFields }: ControlPanelProps)
   const [selectedCoins, setSelectedCoins] = useState<CoinConfig[]>([]);
 
   // Load saved profiles once on mount (localStorage isn't available during SSR).
-  useEffect(() => {
-    setProfiles(loadFeatureProfiles());
-  }, []);
+  // useEffect(() => {
+  //   setProfiles(loadFeatureProfiles());
+  // }, []);
 
   // Any parameter linked to the grid's index order follows it automatically.
   useEffect(() => {
