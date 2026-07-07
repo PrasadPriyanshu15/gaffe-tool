@@ -11,6 +11,8 @@
 //   SchemaField,
 //   SchemaFieldType,
 //   PositionFormat,
+//   PrizePart,
+//   collectTagDefs,
 //   loadFeatureProfiles,
 //   saveFeatureProfile,
 //   deleteFeatureProfile,
@@ -36,7 +38,7 @@
 //   { name: "COLORED SCAT", color: "coloredScat",  hasValue: true },
 // ];
 
-// const FIELD_TYPES: SchemaFieldType[] = ["reelStops", "coin", "multiplier", "static", "custom"];
+// const FIELD_TYPES: SchemaFieldType[] = ["reelStops", "coin", "coinPrize", "multiplier", "static", "custom"];
 
 // const POSITION_FORMATS: { value: PositionFormat; label: string }[] = [
 //   { value: "colRow",            label: "[col, row]" },
@@ -52,9 +54,10 @@
 //   setGrid: React.Dispatch<React.SetStateAction<Cell[][]>>;
 //   coins: CoinConfig[];
 //   positionOrder: PositionOrder;
+//   fields: SchemaField[];
 // };
 
-// export function GenericGrid({ grid, setGrid, coins, positionOrder }: GridProps) {
+// export function GenericGrid({ grid, setGrid, coins, positionOrder, fields }: GridProps) {
 //   const handleClick = (i: number, j: number) => {
 //     setGrid(prev => {
 //       const newGrid = prev.map(row => row.map(cell => ({ ...cell })));
@@ -65,10 +68,17 @@
 //         type: next.name,
 //         value: next.hasValue ? 100 : undefined,
 //         multiplier: undefined,
+//         label: undefined,
+//         tags: current.tags, // keep any tags the user already set while cycling symbols
 //       };
 //       return newGrid;
 //     });
 //   };
+
+//   const tagDefs = collectTagDefs(fields);
+//   const needsTextLabel = fields.some(
+//     f => f.type === "coinPrize" && (f.prizeTemplate ?? []).some(p => p.kind === "prizeValue" && p.valueType === "text")
+//   );
 
 //   return (
 //     <div className="bg-gray-800 p-4 rounded-xl border border-gray-700">
@@ -87,10 +97,11 @@
 //                 key={`${i}-${j}`}
 //                 onClick={() => handleClick(i, j)}
 //                 className="
-//                   w-[84px] h-[84px] bg-gray-700 hover:bg-gray-600
+//                   w-[84px] min-h-[84px] bg-gray-700 hover:bg-gray-600
 //                   text-white rounded-lg flex flex-col items-center
 //                   justify-center cursor-pointer transition-all
 //                   duration-150 shadow-md hover:scale-105 select-none
+//                   pb-1
 //                 "
 //               >
 //                 <div className="text-[9px] opacity-50 leading-none">#{label}</div>
@@ -132,6 +143,63 @@
 //                     className="w-12 mt-0.5 text-[10px] text-center bg-gray-900 text-red-300 rounded border border-gray-600 px-1"
 //                   />
 //                 )}
+
+//                 {cell.type !== "EMPTY" && needsTextLabel && (
+//                   <input
+//                     type="text"
+//                     placeholder="prize label"
+//                     value={cell.label ?? ""}
+//                     onClick={e => e.stopPropagation()}
+//                     onChange={e => {
+//                       const val = e.target.value;
+//                       setGrid(prev => {
+//                         const g = prev.map(r => r.map(c => ({ ...c })));
+//                         g[i][j].label = val;
+//                         return g;
+//                       });
+//                     }}
+//                     className="w-16 mt-0.5 text-[9px] text-center bg-gray-900 text-cyan-300 rounded border border-gray-600 px-1"
+//                   />
+//                 )}
+
+//                 {cell.type !== "EMPTY" && tagDefs.map(tagDef => (
+//                   tagDef.options && tagDef.options.length > 0 ? (
+//                     <select
+//                       key={tagDef.name}
+//                       value={cell.tags?.[tagDef.name] ?? ""}
+//                       onClick={e => e.stopPropagation()}
+//                       onChange={e => {
+//                         const val = e.target.value;
+//                         setGrid(prev => {
+//                           const g = prev.map(r => r.map(c => ({ ...c, tags: { ...c.tags } })));
+//                           g[i][j].tags = { ...(g[i][j].tags ?? {}), [tagDef.name]: val };
+//                           return g;
+//                         });
+//                       }}
+//                       className="w-16 mt-0.5 text-[9px] text-center bg-gray-900 text-purple-300 rounded border border-gray-600 px-0.5"
+//                     >
+//                       <option value="">{tagDef.name}?</option>
+//                       {tagDef.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+//                     </select>
+//                   ) : (
+//                     <input
+//                       key={tagDef.name}
+//                       type="text"
+//                       placeholder={tagDef.name}
+//                       value={cell.tags?.[tagDef.name] ?? ""}
+//                       onClick={e => e.stopPropagation()}
+//                       onChange={e => {
+//                         const val = e.target.value;
+//                         setGrid(prev => {
+//                           const g = prev.map(r => r.map(c => ({ ...c, tags: { ...c.tags } })));
+//                           g[i][j].tags = { ...(g[i][j].tags ?? {}), [tagDef.name]: val };
+//                           return g;
+//                         });
+//                       }}
+//                       className="w-16 mt-0.5 text-[9px] text-center bg-gray-900 text-purple-300 rounded border border-gray-600 px-1"
+//                     />
+//                   )
+//                 ))}
 //               </div>
 //             );
 //           })
@@ -146,6 +214,7 @@
 // const FIELD_TYPE_LABELS: Record<SchemaFieldType, string> = {
 //   reelStops: "Reel Stop Positions",
 //   coin: "Coin Position",
+//   coinPrize: "Coin Prize (custom)",
 //   multiplier: "Multiplier Value",
 //   static: "Static Value",
 //   custom: "Custom Expression",
@@ -171,9 +240,9 @@
 //   const [selectedCoins, setSelectedCoins] = useState<CoinConfig[]>([]);
 
 //   // Load saved profiles once on mount (localStorage isn't available during SSR).
-//   useEffect(() => {
-//     setProfiles(loadFeatureProfiles());
-//   }, []);
+//   // useEffect(() => {
+//   //   setProfiles(loadFeatureProfiles());
+//   // }, []);
 
 //   // Any parameter linked to the grid's index order follows it automatically.
 //   useEffect(() => {
@@ -285,8 +354,55 @@
 //   const handleTypeChange = (index: number, type: SchemaFieldType) => {
 //     if (type === "reelStops") {
 //       updateField(index, { type, useGridOrder: true, positionFormat: orderToFormat(positionOrder) });
+//     } else if (type === "coinPrize") {
+//       updateField(index, { type, prizeTemplate: fields[index]?.prizeTemplate ?? [] });
 //     } else {
 //       updateField(index, { type });
+//     }
+//   };
+
+//   // ── Prize template (coinPrize) editing ──
+//   const addPrizePart = (fieldIndex: number) => {
+//     setFields(prev => prev.map((f, i) =>
+//       i === fieldIndex ? { ...f, prizeTemplate: [...(f.prizeTemplate ?? []), { kind: "row" } as PrizePart] } : f
+//     ));
+//   };
+
+//   const setPrizePart = (fieldIndex: number, partIndex: number, part: PrizePart) => {
+//     setFields(prev => prev.map((f, i) => {
+//       if (i !== fieldIndex) return f;
+//       const template = [...(f.prizeTemplate ?? [])];
+//       template[partIndex] = part;
+//       return { ...f, prizeTemplate: template };
+//     }));
+//   };
+
+//   const removePrizePart = (fieldIndex: number, partIndex: number) => {
+//     setFields(prev => prev.map((f, i) =>
+//       i === fieldIndex ? { ...f, prizeTemplate: (f.prizeTemplate ?? []).filter((_, pi) => pi !== partIndex) } : f
+//     ));
+//   };
+
+//   const movePrizePart = (fieldIndex: number, partIndex: number, dir: -1 | 1) => {
+//     setFields(prev => prev.map((f, i) => {
+//       if (i !== fieldIndex) return f;
+//       const template = [...(f.prizeTemplate ?? [])];
+//       const swap = partIndex + dir;
+//       if (swap < 0 || swap >= template.length) return f;
+//       [template[partIndex], template[swap]] = [template[swap], template[partIndex]];
+//       return { ...f, prizeTemplate: template };
+//     }));
+//   };
+
+//   const prizePartLabel = (part: PrizePart): string => {
+//     switch (part.kind) {
+//       case "row": return "row";
+//       case "col": return "col";
+//       case "flatPosition": return "pos";
+//       case "prizeValue": return part.valueType === "text" ? "prize" : "prize#";
+//       case "tag": return part.tagName || "tag";
+//       case "static": return String(part.value);
+//       default: return "?";
 //     }
 //   };
 
@@ -606,6 +722,45 @@
 //                       </div>
 //                     )}
 //                   </div>
+
+//                   {field.type === "coinPrize" && (
+//                     <div className="space-y-1.5 pt-1">
+//                       <div className="flex items-center gap-1">
+//                         <span className="text-gray-500 text-[10px]">symbol</span>
+//                         <select
+//                           value={field.coinType ?? ""}
+//                           onChange={e => updateField(index, { coinType: e.target.value })}
+//                           className="bg-gray-900 border border-gray-600 text-yellow-300 text-xs px-2 py-1 rounded"
+//                         >
+//                           <option value="">any</option>
+//                           {selectedCoins.map(c => (
+//                             <option key={c.name} value={c.name}>{c.name}</option>
+//                           ))}
+//                         </select>
+//                       </div>
+
+//                       {(field.prizeTemplate ?? []).map((part, pIndex) => (
+//                         <PrizePartRow
+//                           key={pIndex}
+//                           part={part}
+//                           onChange={p => setPrizePart(index, pIndex, p)}
+//                           onRemove={() => removePrizePart(index, pIndex)}
+//                           onMove={dir => movePrizePart(index, pIndex, dir)}
+//                         />
+//                       ))}
+
+//                       <button
+//                         onClick={() => addPrizePart(index)}
+//                         className="w-full border border-dashed border-gray-600 text-gray-400 hover:text-white hover:border-gray-400 text-[10px] py-1 rounded transition-colors"
+//                       >
+//                         + Add Part
+//                       </button>
+
+//                       <div className="text-gray-600 text-[10px] font-mono">
+//                         preview: [{(field.prizeTemplate ?? []).map(prizePartLabel).join(", ")}]
+//                       </div>
+//                     </div>
+//                   )}
 //                 </div>
 //               ))}
 
@@ -686,6 +841,97 @@
 //           <option key={f.value} value={f.value}>{f.label}</option>
 //         ))}
 //       </select>
+//     </div>
+//   );
+// }
+
+// const PRIZE_PART_KINDS: { value: PrizePart["kind"]; label: string }[] = [
+//   { value: "row", label: "Row" },
+//   { value: "col", label: "Col" },
+//   { value: "flatPosition", label: "Flat Position (grid order)" },
+//   { value: "prizeValue", label: "Prize Value" },
+//   { value: "tag", label: "Tag" },
+//   { value: "static", label: "Static" },
+// ];
+
+// function PrizePartRow({
+//   part,
+//   onChange,
+//   onRemove,
+//   onMove,
+// }: {
+//   part: PrizePart;
+//   onChange: (part: PrizePart) => void;
+//   onRemove: () => void;
+//   onMove: (dir: -1 | 1) => void;
+// }) {
+//   const handleKindChange = (kind: PrizePart["kind"]) => {
+//     switch (kind) {
+//       case "row": onChange({ kind: "row" }); break;
+//       case "col": onChange({ kind: "col" }); break;
+//       case "flatPosition": onChange({ kind: "flatPosition" }); break;
+//       case "prizeValue": onChange({ kind: "prizeValue", valueType: "number" }); break;
+//       case "tag": onChange({ kind: "tag", tagName: "", options: [] }); break;
+//       case "static": onChange({ kind: "static", value: "" }); break;
+//     }
+//   };
+
+//   return (
+//     <div className="flex items-center gap-1 flex-wrap bg-gray-900 border border-gray-700 rounded px-2 py-1">
+//       <select
+//         value={part.kind}
+//         onChange={e => handleKindChange(e.target.value as PrizePart["kind"])}
+//         className="bg-gray-950 border border-gray-600 text-blue-300 text-[10px] px-1.5 py-0.5 rounded"
+//       >
+//         {PRIZE_PART_KINDS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+//       </select>
+
+//       {part.kind === "prizeValue" && (
+//         <select
+//           value={part.valueType}
+//           onChange={e => onChange({ ...part, valueType: e.target.value as "number" | "text" })}
+//           className="bg-gray-950 border border-gray-600 text-green-300 text-[10px] px-1.5 py-0.5 rounded"
+//         >
+//           <option value="number">number (cell value)</option>
+//           <option value="text">text label</option>
+//         </select>
+//       )}
+
+//       {part.kind === "tag" && (
+//         <>
+//           <input
+//             value={part.tagName}
+//             onChange={e => onChange({ ...part, tagName: e.target.value })}
+//             placeholder="tag name e.g. direction"
+//             className="bg-gray-950 border border-gray-600 text-cyan-300 text-[10px] px-1.5 py-0.5 rounded font-mono w-28"
+//           />
+//           <input
+//             value={(part.options ?? []).join(",")}
+//             onChange={e => onChange({ ...part, options: e.target.value.split(",") })}
+//             placeholder="options e.g. LEFT, RIGHT"
+//             className="bg-gray-950 border border-gray-600 text-cyan-200 text-[10px] px-1.5 py-0.5 rounded font-mono w-32"
+//           />
+//         </>
+//       )}
+
+//       {part.kind === "static" && (
+//         <input
+//           value={String(part.value)}
+//           onChange={e => {
+//             const raw = e.target.value;
+//             const val = raw !== "" && !isNaN(Number(raw)) ? Number(raw) : raw;
+//             onChange({ ...part, value: val });
+//           }}
+//           placeholder="value"
+//           className="bg-gray-950 border border-gray-600 text-purple-300 text-[10px] px-1.5 py-0.5 rounded font-mono w-20"
+//         />
+//       )}
+
+//       <div className="ml-auto flex items-center gap-1">
+//         <button onClick={() => onMove(-1)} className="text-gray-500 hover:text-white text-[10px] px-1">▲</button>
+//         <button onClick={() => onMove(1)} className="text-gray-500 hover:text-white text-[10px] px-1">▼</button>
+//         <button onClick={onRemove} className="text-red-500 hover:text-red-400 text-[10px] px-1 font-bold">✕</button>
+//       </div>
 //     </div>
 //   );
 // }
@@ -774,8 +1020,6 @@
 //     </button>
 //   );
 // }
-
-
 
 
 
@@ -1096,7 +1340,6 @@ export function ControlPanel({ onCreate, fields, setFields }: ControlPanelProps)
       reelStopEmptyValue,
       coins: selectedCoins,
       fields: normalizedFields,
-      spins: 3,
       savedAt: Date.now(),
     };
     setProfiles(saveFeatureProfile(profile));
@@ -1105,7 +1348,6 @@ export function ControlPanel({ onCreate, fields, setFields }: ControlPanelProps)
       name: profile.name,
       rows,
       cols,
-      spins: 3,
       positionOrder,
       sequenceMode,
       reelStopActiveValue,

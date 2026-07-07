@@ -1,3 +1,4 @@
+
 // /* eslint-disable @typescript-eslint/no-explicit-any */
 
 // // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -6,6 +7,11 @@
 //   type: string;
 //   value?: number;
 //   multiplier?: number | string;
+//   // Text-based prize label, e.g. "COIN_MINI" — distinct from the numeric `value`.
+//   label?: string;
+//   // Free-form per-cell attributes referenced by "coinPrize" parameters,
+//   // e.g. { direction: "LEFT" } or { variant: "winged" }.
+//   tags?: Record<string, string>;
 // };
 
 // export type CoinConfig = {
@@ -117,8 +123,20 @@
 //   | "reelStops"   // 0/1 per cell (column-major)
 //   | "coin"        // positions of cells matching a coin type
 //   | "multiplier"  // positions of cells that have a multiplier
+//   | "coinPrize"   // custom tuple per landed coin — position(s) + prize + tags, in any order
 //   | "static"      // a fixed value
 //   | "custom";     // raw JS expression evaluated against grid (advanced)
+
+// // One element of a "coinPrize" output tuple. A parameter is built as an
+// // ordered list of these — e.g. [row, col, prizeValue, tag:"direction"]
+// // produces entries like [0,1,COIN_MINI,LEFT].
+// export type PrizePart =
+//   | { kind: "row" }
+//   | { kind: "col" }
+//   | { kind: "flatPosition" } // uses the grid's own Horizontal/Vertical order
+//   | { kind: "prizeValue"; valueType: "number" | "text" } // cell.value or cell.label
+//   | { kind: "tag"; tagName: string; options?: string[] } // cell.tags[tagName]
+//   | { kind: "static"; value: string | number };
 
 // export type SchemaField = {
 //   key: string;
@@ -143,6 +161,9 @@
 //   // if true, this field's positionFormat is kept in sync with the grid's
 //   // Horizontal/Vertical index-order selection, instead of being set manually.
 //   useGridOrder?: boolean;
+
+//   // ordered tuple recipe for type === "coinPrize"
+//   prizeTemplate?: PrizePart[];
 // };
 
 // export type OutputEntry = {
@@ -184,7 +205,27 @@
 //   // Value written into the reelStops array for an empty/non-landed position.
 //   // Defaults to 0 if not provided.
 //   emptyValue?: number;
+//   // The grid's own Horizontal/Vertical order — used by "coinPrize" fields for
+//   // iteration order and any "flatPosition" part.
+//   positionOrder?: PositionOrder;
 // };
+
+// // Collects every distinct tag (name + suggested options) referenced by any
+// // coinPrize parameter, so the grid can render one input per tag.
+// export function collectTagDefs(fields: SchemaField[]): { name: string; options?: string[] }[] {
+//   const byName = new Map<string, string[] | undefined>();
+//   for (const f of fields) {
+//     if (f.type !== "coinPrize") continue;
+//     for (const part of f.prizeTemplate ?? []) {
+//       if (part.kind === "tag" && part.tagName.trim()) {
+//         const existing = byName.get(part.tagName) ?? [];
+//         const cleaned = (part.options ?? []).map(o => o.trim()).filter(Boolean);
+//         byName.set(part.tagName, [...new Set([...existing, ...cleaned])]);
+//       }
+//     }
+//   }
+//   return [...byName.entries()].map(([name, options]) => ({ name, options }));
+// }
 
 // export function formatPosition(
 //   col: number,
@@ -277,6 +318,39 @@
 //       return arr;
 //     }
 
+//     case "coinPrize": {
+//       const template = field.prizeTemplate ?? [];
+//       const horizontal = context.positionOrder === "horizontal";
+//       const arr: any[] = [];
+
+//       const walk: [number, number][] = [];
+//       if (horizontal) {
+//         for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) walk.push([i, j]);
+//       } else {
+//         for (let j = 0; j < cols; j++) for (let i = 0; i < rows; i++) walk.push([i, j]);
+//       }
+
+//       for (const [i, j] of walk) {
+//         const cell = grid[i][j];
+//         if (cell.type === "EMPTY") continue;
+//         if (field.coinType && cell.type !== field.coinType) continue;
+
+//         const entry = template.map(part => {
+//           switch (part.kind) {
+//             case "row": return i;
+//             case "col": return j;
+//             case "flatPosition": return horizontal ? i * cols + j : j * rows + i;
+//             case "prizeValue": return part.valueType === "text" ? (cell.label ?? "") : (cell.value ?? 0);
+//             case "tag": return cell.tags?.[part.tagName] ?? "";
+//             case "static": return part.value;
+//             default: return null;
+//           }
+//         });
+//         arr.push(entry);
+//       }
+//       return arr;
+//     }
+
 //     case "static":
 //       return field.staticValue ?? null;
 
@@ -356,8 +430,6 @@
 
 
 
-
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -390,7 +462,6 @@ export type FeatureConfig = {
   rows: number;
   cols: number;
   coins: CoinConfig[];
-  spins: number;
   positionOrder: PositionOrder;
   sequenceMode: SequenceMode;
   // The number written into reelStops output for a landed/filled position
@@ -408,7 +479,6 @@ export type FeatureProfile = {
   rows: number;
   cols: number;
   coins: CoinConfig[];
-  spins: number;
   positionOrder: PositionOrder;
   sequenceMode: SequenceMode;
   reelStopActiveValue: number;
