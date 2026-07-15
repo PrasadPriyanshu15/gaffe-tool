@@ -1,4 +1,9 @@
 
+
+
+
+
+
 // //! ggreTESD
 // "use client";
 // import { useState, useMemo } from "react";
@@ -43,6 +48,7 @@
 //   const [scatZoneMultipliers, setScatZoneMultipliers] = useState<{ [k: string]: string }>({});
 //   const [scatBoostValues,     setScatBoostValues]     = useState<{ [k: string]: string }>({});
 //   const [scatSplitCount,      setScatSplitCount]      = useState<{ [k: string]: string }>({});
+//   const [scatSplitValues,     setScatSplitValues]     = useState<{ [k: string]: string[] }>({});
 //   const [featureEnabled,      setFeatureEnabled]      = useState(true);
 //   const [grandEnabled,        setGrandEnabled]        = useState(false);
 //   const [selectedFeatures,    setSelectedFeatures]    = useState<string[]>([]);
@@ -62,7 +68,8 @@
 //   // ── Base game gaffe ────────────────────────────────────────────────────────
 //   const gaffe = generateGaffe(
 //     reelStops, reels, scatColors, scatValues, selectedFeatures,
-//     grandEnabled, scatZoneSplitter, scatZoneMultipliers, scatBoostValues, scatSplitCount
+//     grandEnabled, scatZoneSplitter, scatZoneMultipliers, scatBoostValues, scatSplitCount,
+//     scatSplitValues
 //   );
 
 //   // ── Zone params from scats ─────────────────────────────────────────────────
@@ -241,6 +248,7 @@
 //             scatZoneMultipliers={scatZoneMultipliers} setScatZoneMultipliers={setScatZoneMultipliers}
 //             scatBoostValues={scatBoostValues}   setScatBoostValues={setScatBoostValues}
 //             scatSplitCount={scatSplitCount}     setScatSplitCount={setScatSplitCount}
+//             scatSplitValues={scatSplitValues}   setScatSplitValues={setScatSplitValues}
 //             featureEnabled={featureEnabled}     setFeatureEnabled={setFeatureEnabled}
 //             grandEnabled={grandEnabled}         setGrandEnabled={setGrandEnabled}
 //             selectedFeatures={selectedFeatures} setSelectedFeatures={setSelectedFeatures}
@@ -387,7 +395,6 @@
 
 
 
-
 //! ggreTESD
 "use client";
 import { useState, useMemo } from "react";
@@ -448,6 +455,10 @@ export default function Home() {
   // ── Upgrade state ──────────────────────────────────────────────────────────
   const [pendingUpgradeInfo, setPendingUpgradeInfo] = useState<UpgradeInfo | null>(null);
   const [carryCoins,         setCarryCoins]         = useState<ComboCoin[] | null>(null);
+  // Zone params from a *confirmed* upgrade (survive after pendingUpgradeInfo
+  // is cleared on spin — pendingUpgradeInfo is only meant to be "in flight").
+  const [confirmedZoneSplitter,    setConfirmedZoneSplitter]    = useState<number | null>(null);
+  const [confirmedZoneMultipliers, setConfirmedZoneMultipliers] = useState<number[] | null>(null);
 
   // ── Base game gaffe ────────────────────────────────────────────────────────
   const gaffe = generateGaffe(
@@ -553,8 +564,12 @@ export default function Home() {
     const sorted = [...activeFeatures].sort();
     // When arriving from an upgrade that specifies zone params, use those instead of
     // the base-game-computed activeSplitter/activeMultipliers (which default to 1/[]).
-    const splitter    = pendingUpgradeInfo?.zoneSplitter    ?? activeSplitter;
-    const multipliers = pendingUpgradeInfo?.zoneMultipliers ?? activeMultipliers;
+    const splitter    = pendingUpgradeInfo?.zoneSplitter
+      ?? confirmedZoneSplitter
+      ?? activeSplitter;
+    const multipliers = pendingUpgradeInfo?.zoneMultipliers
+      ?? confirmedZoneMultipliers
+      ?? activeMultipliers;
     return {
       features: sorted,
       hasExtra:  sorted.includes("extra"),
@@ -564,7 +579,7 @@ export default function Home() {
       splitter,
       multipliers,
     };
-  }, [activeFeatures, isComboFeature, activeSplitter, activeMultipliers, pendingUpgradeInfo]);
+  }, [activeFeatures, isComboFeature, activeSplitter, activeMultipliers, pendingUpgradeInfo, confirmedZoneSplitter, confirmedZoneMultipliers]);
 
   const comboBaseCoins = useMemo((): ComboCoin[] => {
     if (!isComboFeature) return [];
@@ -604,6 +619,7 @@ export default function Home() {
     setExtraGaffeHistory([]);  setZoneGaffeHistory([]);
     setStrikeGaffeHistory([]); setSplitGaffeHistory([]); setComboGaffeHistory([]);
     setPendingUpgradeInfo(null); setCarryCoins(null);
+    setConfirmedZoneSplitter(null); setConfirmedZoneMultipliers(null);
     setActiveFeatures(features);
   };
 
@@ -750,17 +766,27 @@ export default function Home() {
               config={comboConfig}
               pendingUpgradeInfo={pendingUpgradeInfo}
               onSpin={(snap, line) => {
-                if (pendingUpgradeInfo) setPendingUpgradeInfo(null);
+                if (pendingUpgradeInfo) {
+                  // Lock in the zone params from this upgrade before clearing
+                  // pendingUpgradeInfo, so comboConfig doesn't fall back to
+                  // the base game's default splitter on the next render.
+                  if (pendingUpgradeInfo.zoneSplitter) setConfirmedZoneSplitter(pendingUpgradeInfo.zoneSplitter);
+                  if (pendingUpgradeInfo.zoneMultipliers) setConfirmedZoneMultipliers(pendingUpgradeInfo.zoneMultipliers);
+                  setPendingUpgradeInfo(null);
+                }
                 setComboGaffeHistory((p) => [...p, line]);
               }}
               onReset={() => {
                 setPendingUpgradeInfo(null);
                 setCarryCoins(null);
                 setComboGaffeHistory([]);
+                setConfirmedZoneSplitter(null);
+                setConfirmedZoneMultipliers(null);
               }}
               onUpgrade={(newFeatures, coins, upgradeInfo) => {
-                const line = generateCombinationGaffe(coins, comboConfig, upgradeInfo);
-                setComboGaffeHistory((p) => [...p, line]);
+                // Just stage the upgrade — no gaffe line should be generated
+                // here. The child's SPIN button is the single source of
+                // truth for producing a result (see its onSpin handler above).
                 handleUpgradeGoTo(newFeatures, coins, upgradeInfo);
               }}
             />
