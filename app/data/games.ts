@@ -4,11 +4,11 @@ export const games = [
   //   name: "Triple Piggy Pays",
   //   path: "/games/triple-piggy-pays"
   // },
-  {
-    id: "game-2",
-    name: "Game 2",
-    path: "/games/game-2"
-  },
+  // {
+  //   id: "game-2",
+  //   name: "Game 2",
+  //   path: "/games/game-2"
+  // },
   {
     id: "game-3",
     name: "Ignite Purple",
@@ -29,14 +29,14 @@ export const games = [
     name: "Red Ignitee",
     path: "/games/red"
   },
-  {
-    id: "game-7",
-    name: "Game 3",
-    path: "/games/game-3"
-  },
+  // {
+  //   id: "game-7",
+  //   name: "Game 3",
+  //   path: "/games/game-3"
+  // },
   {
     id: "game-8",
-    name: "Game 4",
+    name: "Common tool",
     path: "/games/game-4"
   }
 ];
