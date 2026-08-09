@@ -38,5 +38,10 @@ export const games = [
     id: "game-8",
     name: "Common tool",
     path: "/games/game-4"
+  },
+  {
+    id: "game-9",
+    name: "tpp",
+    path: "/games/tpp2"
   }
 ];
