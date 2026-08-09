@@ -73,7 +73,7 @@ export default function ZoneFeature({ baseCoins, onSpin, onReset, onUpgrade }: P
       if (cell.type !== "EMPTY") snap.add(gridToPos(r, c));
     }));
     lastSnapshot.current = snap;
-  }, [JSON.stringify(baseCoins)]);
+  }, []);
  
   // ── Derived ────────────────────────────────────────────────────────────────
   const purpleCount           = grid.flat().filter(c => c.type === "PURPLE").length;
@@ -91,7 +91,7 @@ export default function ZoneFeature({ baseCoins, onSpin, onReset, onUpgrade }: P
       s.add(gridToPos(row, col));
     });
     return s;
-  }, [JSON.stringify(baseCoins)]);
+  }, []);
  
   /** Snapshot every coin in global flat positions, to carry into an upgrade. */
   const buildCarried = (g: ZoneCell[][]): CarriedCoin[] => {

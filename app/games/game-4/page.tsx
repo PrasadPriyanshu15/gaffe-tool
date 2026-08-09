@@ -518,7 +518,7 @@ export default function Page() {
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {parameter
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">
       {children}

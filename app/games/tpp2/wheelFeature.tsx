@@ -86,7 +86,7 @@ export default function WheelFeature({
       s.add(gridToPos(row, col));
     });
     return s;
-  }, [JSON.stringify(baseCoins)]);
+  }, []);
 
   // ── Grid helpers ───────────────────────────────────────────────────────────
   const applyGrid = (fn: (g: WheelCell[][]) => void) => {
