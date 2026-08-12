@@ -168,12 +168,13 @@ export function computeUnlockState(grid: TowerCell[][]): {
  * reelstripCOR_{pos}:[PRIZE]
  *   — for each NEW gold coin this spin; e.g. reelstripCOR_9:[MINOR]
  *
- * reelstripCOR_{pos}:[BLUE_COIN {seqVal},{prize}]
- *   — for each NEW blue coin this spin; seqVal consumed in order from BLUE_COIN_SEQUENCE
- *   — e.g. reelstripCOR_0:[BLUE_COIN 10000,MINI]
+ * reelstripCOR_{pos}:{prize}
+ *   — for each NEW blue coin this spin; plain value, no BLUE_COIN seq wrapper
+ *   — e.g. reelstripCOR_0:MINI
  *
  * lockedBlueCoinsReelPosition:[[row,reelPos],...]
  *   — all blue coins (accumulated, not just new); row 0 = top locked row, row 7 = 8th locked row
+ *   — this is the ONLY place blue coin positions are reported
  *
  * reelStops:[...]
  *   — ALL 60 positions in column-major order (col 0 top→bottom, then col 1, …)
@@ -206,18 +207,17 @@ export function generateTowerGaffe(
   }
  
   // 2 ── reelstripCOR for each NEW coin (gold or blue) ──────────────────────
-  let bIdx = blueCoinIdx;
+  // GOLD keeps the array form [value]; BLUE is a plain value (no BLUE_COIN seq
+  // wrapper). Blue positions are listed in lockedBlueCoinsReelPosition below.
   grid.forEach((rowArr, r) => rowArr.forEach((cell, c) => {
     if (cell.type === "EMPTY") return;
     const pos = posIdx(r, c);
     if (prevSnap.has(pos)) return;          // not new this spin
- 
+
     if (cell.type === "GOLD") {
       parts.push(`reelstripCOR_${pos}:[${cell.value}]`);
     } else if (cell.type === "BLUE") {
-      const seqVal = BLUE_COIN_SEQUENCE[bIdx] ?? BLUE_COIN_SEQUENCE[BLUE_COIN_SEQUENCE.length - 1];
-      parts.push(`reelstripCOR_${pos}:[BLUE_COIN ${seqVal},${cell.value}]`);
-      bIdx++;
+      parts.push(`reelstripCOR_${pos}:${cell.value}`);
     }
   }));
  

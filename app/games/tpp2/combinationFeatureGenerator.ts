@@ -444,7 +444,7 @@ export function computeUnlockState(grid: ComboCell[][]): {
  *    single features:
  *      GOLD   → [value]
  *      RED    → value                        (+ multiplierLadderPrize_{pos} if set)
- *      BLUE   → [BLUE_COIN {seq},value]
+ *      BLUE   → value                        (position only, via lockedBlueCoinsReelPosition)
  *      PURPLE → value
  *    RED/PURPLE seq values move into unlockedColorCoinsSymbol (unlocked) or
  *    lockedPurpleRedCoinsSymbol (locked).
@@ -523,14 +523,12 @@ export function generateComboGaffe(
   if (lockedBlue.length > 0) parts.push(`lockedBlueCoinsReelPosition:[${lockedBlue.join(",")}]`);
  
   // 4 ── reelstripCOR for every NEW coin this spin + multiplierLadderPrize ───
-  // GOLD always keeps the array form [value]. BLUE is always locked (Tower
-  // rule), so it always keeps the old array form [BLUE_COIN {seq},value] too.
-  // RED/PURPLE can land locked OR unlocked: locked ones keep the old array
-  // form (seq embedded); NEW unlocked ones switch to plain value, with their
-  // symbol moved into unlockedColorCoinsSymbol (slot order [blue,purple,red] —
-  // blue is always empty there since blue never lands unlocked).
+  // GOLD keeps the array form [value]. BLUE / RED / PURPLE are all plain values
+  // (same as the single features) — blue carries no BLUE_COIN seq wrapper, and
+  // its position is reported only via lockedBlueCoinsReelPosition above.
+  // RED/PURPLE seq values move into unlockedColorCoinsSymbol (unlocked) or
+  // lockedPurpleRedCoinsSymbol (locked). Blue emits no symbol line at all.
   let rIdx = redCoinIdx;
-  let bIdx = blueCoinIdx;
   let pIdx = purpleCoinIdx;
   let multLine: string | undefined;
   let redSym:    string | undefined;
@@ -562,9 +560,7 @@ export function generateComboGaffe(
       rIdx++;
       if (cell.multiplier) multLine = `multiplierLadderPrize_${pos}:${cell.multiplier}`;
     } else if (cell.type === "BLUE") {
-      const seqVal = BLUE_COIN_SEQUENCE[bIdx] ?? BLUE_COIN_SEQUENCE[BLUE_COIN_SEQUENCE.length - 1];
-      parts.push(`reelstripCOR_${pos}:[BLUE_COIN ${seqVal},${cell.value}]`);
-      bIdx++;
+      parts.push(`reelstripCOR_${pos}:${cell.value}`);       // plain value, no BLUE_COIN seq wrapper
     } else if (cell.type === "PURPLE") {
       const seqVal = PURPLE_COIN_SEQUENCE[pIdx] ?? PURPLE_COIN_SEQUENCE[PURPLE_COIN_SEQUENCE.length - 1];
       parts.push(`reelstripCOR_${pos}:${cell.value}`);       // plain value (same as single feature)
