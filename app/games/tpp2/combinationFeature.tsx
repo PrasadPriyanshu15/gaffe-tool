@@ -353,8 +353,19 @@ export default function CombinationFeature({
 
     // An upgrade coin landed this spin → carry the full grid forward and switch
     // to the upgraded combination view (the upgrade coin itself vanishes).
+    // Apply zone absorption FIRST so coins swallowed this spin don't carry over.
     if (upgradeCoin && onUpgrade) {
-      onUpgrade(UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color], buildCarried(grid));
+      let carriedGrid = grid;
+      if (hasZn && zones.length > 0) {
+        const ng = grid.map(row => row.map(c => ({ ...c })));
+        zones.forEach(zone => zone.cells.forEach(([zr, zc]) => {
+          if (!isUnlocked(zr)) return;                 // locked rows don't absorb
+          const isAnchor = zone.anchors.some(([ar, ac]) => ar === zr && ac === zc);
+          if (!isAnchor && ng[zr][zc].type !== "EMPTY") ng[zr][zc] = { type: "EMPTY" };
+        }));
+        carriedGrid = ng;
+      }
+      onUpgrade(UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color], buildCarried(carriedGrid));
       return;
     }
  

@@ -190,8 +190,10 @@ export default function ZoneFeature({ baseCoins, onSpin, onReset, onUpgrade }: P
 
     // An upgrade coin landed this spin → carry the full grid forward and switch
     // to the upgraded combination view (the upgrade coin itself vanishes).
+    // Run zone absorption FIRST so coins swallowed this spin don't carry over.
     if (upgradeCoin && onUpgrade) {
-      onUpgrade(UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color], buildCarried(grid));
+      const { grid: absorbedGrid } = processZoneOnSpin(grid, zones);
+      onUpgrade(UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color], buildCarried(absorbedGrid));
       return;
     }
  
