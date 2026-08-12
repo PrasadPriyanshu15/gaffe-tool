@@ -14,11 +14,11 @@ export const games = [
     name: "Ignite Purple",
     path: "/games/Ignite-purple"
   },
-    {
-    id: "game-4",
-    name: "Triple Piggy pays",
-    path: "/games/tpp"
-  },
+  //   {
+  //   id: "game-4",
+  //   name: "Triple Piggy pays",
+  //   path: "/games/tpp"
+  // },
   //  {
   //   id: "game-5",
   //   name: "Ignite Red",
