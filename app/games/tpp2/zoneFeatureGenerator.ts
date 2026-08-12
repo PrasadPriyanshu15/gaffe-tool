@@ -222,18 +222,18 @@ export function generateZoneGaffe(
   }
  
   // 2 ── Find the NEW purple-coin position ────────────────────────────────────
-  // Zone only tracks purple (no blue/red). Slot layout is [blue, purple] —
-  // blue is always empty here since Zone has no blue coins.
+  // Slot layout matches Wheel exactly: [blue, purple, red]. Zone only ever
+  // populates the purple (2nd) slot; blue and red stay empty.
   let purplePos: number | null = null;
- 
+
   grid.forEach((rowArr, r) => rowArr.forEach((cell, c) => {
     const pos = gridToPos(r, c);
     if (prevSnap.has(pos)) return;
     if (cell.type === "PURPLE") purplePos = pos;
   }));
- 
+
   if (purplePos !== null) {
-    parts.push(`unlockedColorCoinsReelPosition:[,${purplePos}]`);
+    parts.push(`unlockedColorCoinsReelPosition:[,${purplePos},]`);
   }
  
   // 3 ── reelstripCOR_{pos} for each NEW coin ─────────────────────────────────
@@ -259,7 +259,7 @@ export function generateZoneGaffe(
   }));
  
   if (purpleSeqVal !== undefined) {
-    parts.push(`unlockedColorCoinsSymbol:[,${purpleSeqVal}]`);
+    parts.push(`unlockedColorCoinsSymbol:[,${purpleSeqVal},]`);
   }
  
   // 4 ── reelStops ────────────────────────────────────────────────────────────
