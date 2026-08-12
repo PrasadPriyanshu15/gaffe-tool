@@ -431,16 +431,23 @@ export function computeUnlockState(grid: ComboCell[][]): {
  *    Blue effectively never appears here since blue can only land in locked
  *    rows, but the slot is kept for format consistency / future combos.
  *
- * 3. lockedBlueCoinsReelPosition / lockedRedCoinsReelPosition /
- *    lockedPurpleCoinsReelPosition:[[row,pos],...] — ALL coins of that color
- *    currently sitting in the LOCKED section (rows 0-7), accumulated across
- *    spins (mirrors Tower's own lockedBlueCoinsReelPosition format).
+ * 3. lockedBlueCoinsReelPosition:[[row,pos],...] — ALL blue coins currently in
+ *    the LOCKED section (rows 0-7), accumulated across spins (Tower's format).
+ *    Red/purple landing in locked rows are NOT accumulated here — instead the
+ *    NEW-this-spin ones are reported together via:
+ *      lockedPurpleRedCoinsSymbol:[purpleSeq,redSeq]        (2 slots, no blue)
+ *      lockedPurpleRedCoinsReelPosition:[purplePos,redPos]  (2 slots)
+ *    with an empty slot for whichever color didn't land this spin, and only
+ *    ever the current spin's positions (never previous spins').
  *
- * 4. reelstripCOR_{pos}:[...] for every NEW coin this spin:
+ * 4. reelstripCOR_{pos}:... for every NEW coin this spin — same shape as the
+ *    single features:
  *      GOLD   → [value]
- *      RED    → [RED_COIN {seq},value]      (+ multiplierLadderPrize_{pos} if set)
+ *      RED    → value                        (+ multiplierLadderPrize_{pos} if set)
  *      BLUE   → [BLUE_COIN {seq},value]
- *      PURPLE → [PURPLE_COIN {seq},value]
+ *      PURPLE → value
+ *    RED/PURPLE seq values move into unlockedColorCoinsSymbol (unlocked) or
+ *    lockedPurpleRedCoinsSymbol (locked).
  *
  * 5. reelStops — follows the same concept as the relevant standalone feature:
  *    all 60 positions when piggyTower is active (like Tower), otherwise just
@@ -502,23 +509,18 @@ export function generateComboGaffe(
     parts.push(`unlockedColorCoinsReelPosition:[${b},${p},${r}]`);
   }
  
-  // 3 ── locked-row accumulators (ALL coins of that color currently locked) ──
-  const lockedBlue:   string[] = [];
-  const lockedRed:    string[] = [];
-  const lockedPurple: string[] = [];
- 
+  // 3 ── lockedBlueCoinsReelPosition — ALL blue coins currently in locked rows.
+  // Blue is Tower's own coin and keeps its accumulator format. Red/purple that
+  // land in locked rows are reported per-spin below (lockedPurpleRedCoins*),
+  // NOT accumulated here.
+  const lockedBlue: string[] = [];
   grid.forEach((rowArr, r) => rowArr.forEach((cell, c) => {
     const pos = gridToPos(r, c, features);
     if (!isPosLocked(pos)) return;
     const globalRow = pos % ROWS_TOTAL;
-    if (cell.type === "BLUE")   lockedBlue.push(`[${globalRow},${pos}]`);
-    if (cell.type === "RED")    lockedRed.push(`[${globalRow},${pos}]`);
-    if (cell.type === "PURPLE") lockedPurple.push(`[${globalRow},${pos}]`);
+    if (cell.type === "BLUE") lockedBlue.push(`[${globalRow},${pos}]`);
   }));
- 
-  if (lockedBlue.length   > 0) parts.push(`lockedBlueCoinsReelPosition:[${lockedBlue.join(",")}]`);
-  if (lockedRed.length    > 0) parts.push(`lockedRedCoinsReelPosition:[${lockedRed.join(",")}]`);
-  if (lockedPurple.length > 0) parts.push(`lockedPurpleCoinsReelPosition:[${lockedPurple.join(",")}]`);
+  if (lockedBlue.length > 0) parts.push(`lockedBlueCoinsReelPosition:[${lockedBlue.join(",")}]`);
  
   // 4 ── reelstripCOR for every NEW coin this spin + multiplierLadderPrize ───
   // GOLD always keeps the array form [value]. BLUE is always locked (Tower
@@ -551,12 +553,11 @@ export function generateComboGaffe(
       parts.push(`reelstripCOR_${pos}:[${cell.value}]`);
     } else if (cell.type === "RED") {
       const seqVal = RED_COIN_SEQUENCE[rIdx] ?? RED_COIN_SEQUENCE[RED_COIN_SEQUENCE.length - 1];
+      parts.push(`reelstripCOR_${pos}:${cell.value}`);       // plain value (same as single feature)
       if (unlockedNew) {
-        parts.push(`reelstripCOR_${pos}:${cell.value}`);
-        redSym = seqVal;
-      } else {
-        parts.push(`reelstripCOR_${pos}:[${seqVal},${cell.value}]`);
-        if (lockedNewRedSym === undefined) { lockedNewRedSym = seqVal; lockedNewRedPos = pos; }
+        redSym = seqVal;                                     // → unlockedColorCoinsSymbol
+      } else if (lockedNewRedSym === undefined) {
+        lockedNewRedSym = seqVal; lockedNewRedPos = pos;     // → lockedPurpleRedCoinsSymbol
       }
       rIdx++;
       if (cell.multiplier) multLine = `multiplierLadderPrize_${pos}:${cell.multiplier}`;
@@ -566,12 +567,11 @@ export function generateComboGaffe(
       bIdx++;
     } else if (cell.type === "PURPLE") {
       const seqVal = PURPLE_COIN_SEQUENCE[pIdx] ?? PURPLE_COIN_SEQUENCE[PURPLE_COIN_SEQUENCE.length - 1];
+      parts.push(`reelstripCOR_${pos}:${cell.value}`);       // plain value (same as single feature)
       if (unlockedNew) {
-        parts.push(`reelstripCOR_${pos}:${cell.value}`);
-        purpleSym = seqVal;
-      } else {
-        parts.push(`reelstripCOR_${pos}:[${seqVal},${cell.value}]`);
-        if (lockedNewPurpleSym === undefined) { lockedNewPurpleSym = seqVal; lockedNewPurplePos = pos; }
+        purpleSym = seqVal;                                  // → unlockedColorCoinsSymbol
+      } else if (lockedNewPurpleSym === undefined) {
+        lockedNewPurpleSym = seqVal; lockedNewPurplePos = pos; // → lockedPurpleRedCoinsSymbol
       }
       pIdx++;
     }
@@ -583,8 +583,9 @@ export function generateComboGaffe(
     parts.push(`unlockedColorCoinsSymbol:[,${p},${r}]`);
   }
  
-  // Combined NEW-this-spin locked red/purple (supplements the accumulator lines
-  // above). Slot order [purple, red]; empty slot if that color didn't land.
+  // NEW-this-spin red/purple that landed in a LOCKED row, reported together.
+  // Slot order [purple, red] (2 elements, no blue); empty slot if that color
+  // didn't land this spin. Only this spin's coins — never accumulated.
   if (lockedNewRedSym !== undefined || lockedNewPurpleSym !== undefined) {
     const pSym = lockedNewPurpleSym ?? "";
     const rSym = lockedNewRedSym    ?? "";
