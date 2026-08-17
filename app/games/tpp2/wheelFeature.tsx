@@ -514,11 +514,11 @@ export default function WheelFeature({
           </div>
 
           {/* ── Legend ── */}
-          <div className="text-[10px] text-gray-600 flex gap-3 flex-wrap">
+          {/* <div className="text-[10px] text-gray-600 flex gap-3 flex-wrap">
             <span>🟡 Gold → click → 🔴 Red → click → 🟡</span>
             <span>⚡E = set typeEReelPosition</span>
             <span>Max {MAX_RED_COINS} red coins total</span>
-          </div>
+          </div> */}
 
         </div>
       )}

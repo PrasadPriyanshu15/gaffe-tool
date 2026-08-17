@@ -245,11 +245,11 @@ export default function BaseGame({
             </div>
           )}
 
-          {featureEnabled && visibleFeatures.size === 0 && (
+          {/* {featureEnabled && visibleFeatures.size === 0 && (
             <p className="text-gray-500 text-xs italic">
               Assign a colour to a visible SCAT to unlock feature selection.
             </p>
-          )}
+          )} */}
 
         </div>
       )}

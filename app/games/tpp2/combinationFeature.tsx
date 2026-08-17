@@ -812,14 +812,14 @@ export default function CombinationFeature({
           </div>
  
           {/* Legend */}
-          <div className="text-xs text-gray-500 flex gap-3 flex-wrap">
+          {/* <div className="text-xs text-gray-500 flex gap-3 flex-wrap">
             <span>Click to cycle: 🟡 GOLD</span>
             {hasWhl && <span>→ 🔴 RED (any row)</span>}
             {isTwr  && <span>→ 🔵 BLUE (locked rows only)</span>}
             {hasZn  && <span>→ 🟣 PURPLE {isTwr ? "(inactive in locked rows)" : "(zone anchor)"}</span>}
             <span>| ✕ remove</span>
             <span>⚡E = set typeEReelPosition (unlocked cells)</span>
-          </div>
+          </div> */}
  
         </div>
       )}

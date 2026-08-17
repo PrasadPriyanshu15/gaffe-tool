@@ -499,12 +499,12 @@ export default function ZoneFeature({ baseCoins, onSpin, onReset, onUpgrade }: P
           </div>
  
           {/* ── Legend ── */}
-          <div className="text-[10px] text-gray-600 flex gap-3 flex-wrap">
+          {/* <div className="text-[10px] text-gray-600 flex gap-3 flex-wrap">
             <span>🟡 Gold → click → 🟣 Purple → click → 🟡</span>
             <span>⚡E = set typeEReelPosition</span>
             <span>Max {MAX_PURPLE_COINS} purple coins total</span>
             <span>🟣 Purple = zone anchor (3×3 area) · 🔋 = charges left</span>
-          </div>
+          </div> */}
  
         </div>
       )}
