@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# confidential reels data (one per game folder)
+app/games/*/reels.ts
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
