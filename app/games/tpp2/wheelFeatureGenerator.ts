@@ -47,10 +47,7 @@ export const MULTIPLIER_VALUES: string[] = [
 ];
 
 // ─── Coin value options ────────────────────────────────────────────────────────
-export const COIN_VALUES: string[] = [
-  "MINOR", "MINI", "750", "500", "400", "300", "250",
-  "200",   "150",  "100",  "80",  "50",  "30",  "20",
-];
+export const COIN_VALUES: string[] =["MINOR", "MINI", "150", "125", "100", "70", "60", "50", "40", "25", "15", "10", "5", "4"];
 
 // ─── Cell types ────────────────────────────────────────────────────────────────
 export type WheelCell =

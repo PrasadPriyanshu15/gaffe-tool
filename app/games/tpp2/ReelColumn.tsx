@@ -57,7 +57,7 @@ export const SCAT_OPTIONS: { key: ScatKey; label: string; name: string }[] = [
   { key: "piggyWheel", label: "RED_SCAT",    name: "Red"    },
 ];
 
-export const COIN_VALUES = ["MINOR", "MINI", "750", "500", "400", "300", "250", "200", "150", "100", "80", "50", "30", "20"];
+export const COIN_VALUES = ["MINOR", "MINI", "150", "125", "100", "70", "60", "50", "40", "25", "15", "10", "5", "4"];
 
 // ─── Style helpers ────────────────────────────────────────────────────────────
 
