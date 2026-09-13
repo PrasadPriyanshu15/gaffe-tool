@@ -1,10 +1,7 @@
-
-
-
-
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+
+import { visibleCells, clampOffset } from "@/lib/reelGrid";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -19,13 +16,13 @@ export type ScatType = {
 type Props = {
   reelIndex: number;
   reel: string[];
-  /**
-   * reelStopPositions OUTPUT value.
-   * Visible rows use offsets [-2,-1,0,+1] from this value.
-   * Highlighted row = offset -1  (row index 1, 0-based).
-   */
+  /** Strip index of the first landed symbol (the cell on the landing row). */
   stop: number;
   setStop: (reelIndex: number, value: number) => void;
+  /** Global visible row count. */
+  rows: number;
+  /** Global anchor row (0 … rows-1): the row where each reel's stop is processed. */
+  offset: number;
   scatColors: { [key: string]: ScatType };
   setScatColors: (val: any) => void;
   scatValues: { [key: string]: string };
@@ -37,19 +34,8 @@ type Props = {
 // ─── Exported constants ───────────────────────────────────────────────────────
 
 /**
- * Offsets from the output stop value → row array indices.
- *   Row 0 : stop-2  (top)
- *   Row 1 : stop-1  ← HIGHLIGHTED STOP ROW
- *   Row 2 : stop+0
- *   Row 3 : stop+1  (bottom)
- */
-export const VISIBLE_OFFSETS = [-2, -1, 0, 1] as const;
-export const HIGHLIGHT_ROW   = 1;
-
-/**
  * SCAT colour options.
  * Internal key maps to feature (zone=ZONE feature, tower=TOWER feature, wheel=WHEEL feature).
- * Display name and output label use colour names.
  */
 export const SCAT_OPTIONS: { key: ScatKey; label: string; name: string }[] = [
   { key: "piggyZone",  label: "PURPLE_SCAT", name: "Purple" },
@@ -63,27 +49,25 @@ export const COIN_VALUES = ["MINOR", "MINI", "150", "125", "100", "70", "60", "5
 
 function cellStyle(
   symbol: string,
-  rowIndex: number,
+  isLanding: boolean,
   scatKey?: ScatKey
 ): { background: string; border?: string } {
-  const hl = rowIndex === HIGHLIGHT_ROW;
-
   if (symbol === "SCAT" && scatKey) {
     const map: Record<ScatKey, [string, string]> = {
-      //                          highlight       normal
+      //                          landing         normal
       piggyZone:  ["#9333ea", "#6b21a8"],  // purple-600 / purple-800
-      piggyTower: ["#2563eb", "#1e3a8a"],  // blue-600   / blue-900 (distinct from cell)
+      piggyTower: ["#2563eb", "#1e3a8a"],  // blue-600   / blue-900
       piggyWheel: ["#ef4444", "#991b1b"],  // red-500    / red-800
     };
     const [hlColor, nmColor] = map[scatKey];
-    return { background: hl ? hlColor : nmColor };
+    return { background: isLanding ? hlColor : nmColor };
   }
 
   if (symbol === "SCAT")
-    return { background: hl ? "#ca8a04" : "#78350f", border: "1px dashed #fbbf24" };
+    return { background: isLanding ? "#ca8a04" : "#78350f", border: "1px dashed #fbbf24" };
 
   // Normal cell
-  return { background: hl ? "#3b82f6" : "#1e40af" };
+  return { background: isLanding ? "#3b82f6" : "#1e40af" };
 }
 
 function selectBg(scatKey?: ScatKey): string {
@@ -103,16 +87,14 @@ function resolveDisplay(symbol: string, stackSym?: string | null): string {
 
 export default function ReelColumn({
   reelIndex, reel, stop, setStop,
+  rows, offset,
   scatColors, setScatColors,
   scatValues, setScatValues,
   stackSymbol,
 }: Props) {
   const len = reel.length;
-
-  const visibleRows = VISIBLE_OFFSETS.map((offset, rowIndex) => {
-    const index = ((stop + offset) % len + len) % len;
-    return { index, symbol: reel[index], rowIndex };
-  });
+  const landingRow = clampOffset(offset, rows);
+  const cells = visibleCells(reel, stop, offset, rows);
 
   const handleColor = (key: string, k: ScatKey) => {
     const opt = SCAT_OPTIONS.find((o) => o.key === k)!;
@@ -127,35 +109,39 @@ export default function ReelColumn({
       style={{ minWidth: 108, background: "#1a3a8f" }}
     >
       {/* Label */}
-      <div className="text-center text-xs text-blue-200 font-medium pt-2 pb-0.5">
+      <div className="text-center text-xs text-blue-200 font-medium pt-2 pb-1">
         Reel {reelIndex + 1}
       </div>
 
-      {/* ▲ */}
+      {/* ▲ — move the strip up (earlier strip index) */}
       <button
-        onClick={() => setStop(reelIndex, (stop - 1 + len) % len)}
+        onClick={() => len > 0 && setStop(reelIndex, (stop - 1 + len) % len)}
         className="text-white py-1 text-sm hover:bg-white/10 transition-colors"
       >▲</button>
 
       {/* Cells */}
       <div className="flex flex-col gap-[3px] px-[4px]">
-        {visibleRows.map(({ index, symbol, rowIndex }) => {
+        {cells.map((cell) => {
+          if (cell.stripIndex === null || cell.symbol === null) return null;
+
+          const symbol   = cell.symbol;
+          const index    = cell.stripIndex;
           const key      = `${reelIndex}-${index}`;
           const isScat   = symbol === "SCAT";
           const scatData = isScat ? scatColors[key] : undefined;
-          const st       = cellStyle(symbol, rowIndex, scatData?.key);
-          const isHL     = rowIndex === HIGHLIGHT_ROW;
+          const isLand   = cell.row === landingRow;
+          const st       = cellStyle(symbol, isLand, scatData?.key);
           const display  = resolveDisplay(symbol, stackSymbol);
 
           return (
             <div
-              key={rowIndex}
-              className={`rounded-lg flex flex-col items-center justify-center px-1.5 gap-1 transition-colors ${isHL ? "font-bold" : "font-normal"}`}
+              key={cell.row}
+              className={`rounded-lg flex flex-col items-center justify-center px-1.5 gap-1 transition-colors ${isLand ? "font-bold" : "font-normal"}`}
               style={{ minHeight: isScat ? 84 : 50, ...st }}
             >
               {/* Symbol + index */}
               <div className="text-center leading-snug w-full break-words">
-                <span className={`text-white ${isHL ? "text-[13px]" : "text-xs"}`}>
+                <span className={`text-white ${isLand ? "text-[13px]" : "text-xs"}`}>
                   {display}
                 </span>
                 <span className="text-blue-100 text-[10px] opacity-60"> #{index}</span>
@@ -200,9 +186,9 @@ export default function ReelColumn({
         })}
       </div>
 
-      {/* ▼ */}
+      {/* ▼ — move the strip down (later strip index) */}
       <button
-        onClick={() => setStop(reelIndex, (stop + 1) % len)}
+        onClick={() => len > 0 && setStop(reelIndex, (stop + 1) % len)}
         className="text-white py-1 text-sm hover:bg-white/10 transition-colors mt-[3px] mb-1"
       >▼</button>
     </div>

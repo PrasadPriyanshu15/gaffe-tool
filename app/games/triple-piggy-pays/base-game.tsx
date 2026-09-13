@@ -4,6 +4,7 @@
 import { useState } from "react";
 import ReelColumn from "@/games/triple-piggy-pays/components/ReelColumn";
 import { reels } from "./reels";
+import ReelstripUploader from "@/components/ReelstripUploader";
 
 type Props = {
   reelStops: number[];
@@ -30,8 +31,7 @@ type Props = {
 
   setActiveFeatures: (features: ("WHEEL" | "TOWER" | "ZONE")[]) => void;
 
-
-  
+  onUploadReels?: (reels: string[][]) => void;
 };
 
 export default function BaseGame({
@@ -47,7 +47,8 @@ export default function BaseGame({
   setFeatureEnabled,
   featureTriggers,
   setFeatureTriggers,
-  setActiveFeatures
+  setActiveFeatures,
+  onUploadReels,
 }: Props) {
 
   // 🔥 COLLAPSE STATE
@@ -120,6 +121,11 @@ export default function BaseGame({
       {/* 🔽 COLLAPSIBLE CONTENT */}
       {isOpen && (
         <div className="p-6 pt-0">
+
+          {/* UPLOAD REELSTRIP */}
+          <div className="mb-4">
+            <ReelstripUploader onLoaded={onUploadReels} />
+          </div>
 
           {/* SLOT GRID */}
           <div className="flex gap-4">

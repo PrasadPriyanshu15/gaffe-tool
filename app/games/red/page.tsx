@@ -1677,7 +1677,7 @@ import ExtraFeature from "./ExtraFeature";
 import DoubleFeature from "./DoubleFeature";
 import UltraFeature from "./UltraFeature";
 import CombinationFeature from "./CombinationFeature";
-import { reels } from "./reels";
+import { reels, setReels } from "./reels";
 import { ScatsState, generateGaffe, formatGaffe } from "./gaffeGenerator";
 import { SCAT_COLOR_CODE, ScatType } from "./config";
 import {
@@ -1824,11 +1824,22 @@ export default function Home() {
   // ── Active features (locked when "Go to" clicked) ──────────────────────────
   const [activeFeatures, setActiveFeatures] = useState<string[]>([]);
 
+  // Bumped when an uploaded reelstrip replaces `reels` (the generator reads it
+  // as a live module binding), so the gaffe recomputes and the grid re-renders.
+  const [reelsVersion, setReelsVersion] = useState(0);
+  const handleUploadReels = (next: string[][]) => {
+    setReels(next);
+    setReelsVersion((v) => v + 1);
+  };
+
   // ── Gaffe output histories ──────────────────────────────────────────────────
   // Always reflect current reel stops — updates live as user scrolls reels
   const baseGaffeLine = useMemo(
-    () => formatGaffe(generateGaffe(reelStops, scats, selectedFeatures, false)),
-    [reelStops, scats, selectedFeatures]
+    () => {
+      void reelsVersion; // recompute when an uploaded reelstrip replaces `reels` (a live binding)
+      return formatGaffe(generateGaffe(reelStops, scats, selectedFeatures, false));
+    },
+    [reelStops, scats, selectedFeatures, reelsVersion]
   );
   const [zoneHistory,   setZoneHistory]   = useState<string[]>([]);
   const [extraHistory,  setExtraHistory]  = useState<string[]>([]);
@@ -1942,6 +1953,7 @@ export default function Home() {
             featureEnabled={featureEnabled} setFeatureEnabled={setFeatureEnabled}
             selectedFeatures={selectedFeatures} setSelectedFeatures={setSelectedFeatures}
             onGoTo={handleGoTo}
+            onUploadReels={handleUploadReels}
           />
 
           {isSingleFeature && activeFeatures.includes("zone") && (

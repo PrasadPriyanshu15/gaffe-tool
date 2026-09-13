@@ -129,6 +129,7 @@
 import { useState } from "react";
 import ReelColumn from "./ReelColumn";
 import { reels } from "./reels";
+import ReelstripUploader from "@/components/ReelstripUploader";
 import { ALL_FEATURES, ScatType } from "./config";
 import { ScatsState } from "./gaffeGenerator";
 
@@ -142,6 +143,7 @@ type Props = {
   selectedFeatures:    string[];
   setSelectedFeatures: (val: string[]) => void;
   onGoTo:              (features: string[]) => void;
+  onUploadReels?:      (reels: string[][]) => void;
 };
 
 const FEATURE_INACTIVE: Record<string, string> = {
@@ -162,6 +164,7 @@ export default function BaseGame({
   featureEnabled, setFeatureEnabled,
   selectedFeatures, setSelectedFeatures,
   onGoTo,
+  onUploadReels,
 }: Props) {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -193,6 +196,9 @@ export default function BaseGame({
 
       {isOpen && (
         <div className="p-4 pt-0 flex flex-col gap-4">
+          {/* Upload reelstrip */}
+          <ReelstripUploader onLoaded={onUploadReels} />
+
           {/* Reels */}
           <div className="flex gap-2 overflow-x-auto pb-1">
             {reels.map((reel, i) => (

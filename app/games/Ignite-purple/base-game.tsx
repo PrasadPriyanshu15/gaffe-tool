@@ -169,6 +169,7 @@
 import { useState } from "react";
 import ReelColumn from "../Ignite-purple/components/ReelColumn";
 import { reels } from "./reels";
+import ReelstripUploader from "@/components/ReelstripUploader";
 
 type ScatType = {
   key: "orange" | "blue" | "cerise" | "green" | "all";
@@ -202,6 +203,7 @@ type Props = {
   selectedFeatures: string[];
   setSelectedFeatures: (val: string[]) => void;
   onGoTo: (features: string[]) => void;
+  onUploadReels?: (reels: string[][]) => void;
 };
 
 const ALL_FEATURES = ["strike", "zone", "split", "extra"];
@@ -219,6 +221,7 @@ export default function BaseGame({
   grandEnabled, setGrandEnabled,
   selectedFeatures, setSelectedFeatures,
   onGoTo,
+  onUploadReels,
 }: Props) {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -248,6 +251,11 @@ export default function BaseGame({
 
       {isOpen && (
         <div className="p-6 pt-0">
+
+          {/* UPLOAD REELSTRIP */}
+          <div className="mb-4">
+            <ReelstripUploader onLoaded={onUploadReels} />
+          </div>
 
           {/* REELS */}
           <div className="flex gap-4">

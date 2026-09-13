@@ -405,7 +405,7 @@ import ZoneFeature from "./features/zone/ZoneFeature";
 import StrikeFeature from "./features/strike/StrikeFeature";
 import SplitFeature from "./features/split/SplitFeature";
 import CombinationFeature from "./features/combinations/CombinationFeature";
-import { reels } from "./reels";
+import { reels, setReels } from "./reels";
 import { generateGaffe } from "@/games/Ignite-purple/utils/gaffeGenerator";
 import { generateExtraFeatureGaffe, UpgradeInfoSingle as UpgradeInfoExtra } from "@/games/Ignite-purple/features/extra/extraFeatureGenerator";
 import { generateZoneFeatureGaffe, UpgradeInfoSingle as UpgradeInfoZone } from "@/games/Ignite-purple/features/zone/zoneFeatureGenerator";
@@ -444,6 +444,14 @@ export default function Home() {
   const [grandEnabled,        setGrandEnabled]        = useState(false);
   const [selectedFeatures,    setSelectedFeatures]    = useState<string[]>([]);
   const [activeFeatures,      setActiveFeatures]      = useState<string[]>([]);
+
+  // Bumped when an uploaded reelstrip replaces `reels`, forcing a re-render so
+  // the inline gaffe + base grid pick up the new (live-binding) reels.
+  const [, setReelsVersion] = useState(0);
+  const handleUploadReels = (next: string[][]) => {
+    setReels(next);
+    setReelsVersion((v) => v + 1);
+  };
 
   // ── Feature gaffe histories ────────────────────────────────────────────────
   const [extraGaffeHistory,  setExtraGaffeHistory]  = useState<string[]>([]);
@@ -653,6 +661,7 @@ export default function Home() {
             grandEnabled={grandEnabled}         setGrandEnabled={setGrandEnabled}
             selectedFeatures={selectedFeatures} setSelectedFeatures={setSelectedFeatures}
             onGoTo={handleGoTo}
+            onUploadReels={handleUploadReels}
           />
 
           {/* ── SINGLE FEATURES ───────────────────────── */}

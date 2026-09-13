@@ -1,4 +1,8 @@
-export const reels = [
+export let reels: string[][] = [];
+
+// Hardcoded default reels — no longer shown; supply reels via the JSON uploader. To be removed.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _defaultReels: string[][] = [
  [
   "STACK",
   "STACK",
@@ -330,3 +334,9 @@ export const reels = [
 ]
 ];
 
+
+
+/** Replace the active reels at runtime (used by the in-browser reelstrip uploader). */
+export function setReels(next: string[][]): void {
+  reels = next;
+}

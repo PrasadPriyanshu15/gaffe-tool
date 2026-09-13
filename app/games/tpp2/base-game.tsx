@@ -3,8 +3,10 @@
 "use client";
 
 import { useState } from "react";
-import ReelColumn, { VISIBLE_OFFSETS, ScatType, ScatKey } from "./ReelColumn";
+import ReelColumn, { ScatType, ScatKey } from "./ReelColumn";
 import { reels } from "./reels";
+import ReelstripUploader from "@/components/ReelstripUploader";
+import { visibleCells } from "@/lib/reelGrid";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,6 +28,11 @@ type Props = {
   selectedFeatures:    string[];
   setSelectedFeatures: (val: string[]) => void;
   onGoTo:              (features: string[]) => void;
+  onUploadReels?:      (reels: string[][]) => void;
+  rows:                number;
+  setRows:             (val: number) => void;
+  offset:              number;
+  setOffset:           (val: number) => void;
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -73,18 +80,18 @@ export default function BaseGame({
   majorEnabled,       setMajorEnabled,
   selectedFeatures,   setSelectedFeatures,
   onGoTo,
+  onUploadReels,
+  rows,               setRows,
+  offset,             setOffset,
 }: Props) {
   const [isOpen, setIsOpen] = useState(true);
 
-  // Collect features visible via assigned SCAT colours
+  // Collect features visible via assigned SCAT colours (over the dynamic grid)
   const visibleFeatures = new Set<ScatKey>();
   reels.forEach((reel, reelIndex) => {
-    const stop = reelStops[reelIndex];
-    const len  = reel.length;
-    VISIBLE_OFFSETS.forEach((offset) => {
-      const index = ((stop + offset) % len + len) % len;
-      if (reel[index] === "SCAT") {
-        const scat = scatColors[`${reelIndex}-${index}`];
+    visibleCells(reel, reelStops[reelIndex] ?? 0, offset, rows).forEach((cell) => {
+      if (cell.symbol === "SCAT" && cell.stripIndex !== null) {
+        const scat = scatColors[`${reelIndex}-${cell.stripIndex}`];
         if (scat) visibleFeatures.add(scat.key);
       }
     });
@@ -112,25 +119,68 @@ export default function BaseGame({
       {isOpen && (
         <div className="px-4 pb-5 flex flex-col gap-5">
 
+          {/* ── Upload reelstrip ── */}
+          <ReelstripUploader onLoaded={onUploadReels} />
+
+          {/* ── Grid rows + offset controls (global) ── */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <label className="text-sm text-gray-300 font-medium">Rows</label>
+            <input
+              type="number"
+              min={1}
+              max={12}
+              value={rows}
+              onChange={(e) => {
+                const v = Math.max(1, Math.min(12, Number(e.target.value) || 1));
+                setRows(v);
+              }}
+              className="w-16 px-2 py-1 rounded-lg text-sm text-white border border-gray-600 outline-none"
+              style={{ background: "#374151" }}
+            />
+
+            <label className="text-sm text-gray-300 font-medium ml-1">Offset</label>
+            <select
+              value={Math.max(0, Math.min(offset, rows - 1))}
+              onChange={(e) => setOffset(Number(e.target.value))}
+              className="px-2 py-1 rounded-lg text-sm text-white border border-gray-600 outline-none"
+              style={{ background: "#374151" }}
+            >
+              {Array.from({ length: Math.max(rows, 1) }, (_, r) => (
+                <option key={r} value={r} className="bg-gray-800">row {r}</option>
+              ))}
+            </select>
+            <span className="text-xs text-gray-500 italic">
+              anchor row where each reel’s stop symbol is processed · applies to the whole grid
+            </span>
+          </div>
+
           {/* ── Reel columns ── */}
+          {reels.length === 0 ? (
+            <div className="text-sm text-gray-400 italic py-6 text-center border border-dashed border-gray-600 rounded-lg">
+              No reelstrip loaded. Upload a reelstrip JSON to populate the grid.
+            </div>
+          ) : (
           <div className="flex gap-2 overflow-x-auto pb-1">
             {reels.map((reel, i) => (
               <ReelColumn
                 key={i}
                 reelIndex={i}
                 reel={reel}
-                stop={reelStops[i]}
+                stop={reelStops[i] ?? 0}
                 setStop={(idx, val) => {
                   const u = [...reelStops];
                   u[idx] = val;
                   setReelStops(u);
                 }}
+                rows={rows}
+                offset={offset}
                 scatColors={scatColors}   setScatColors={setScatColors}
                 scatValues={scatValues}   setScatValues={setScatValues}
                 stackSymbol={stackSymbol}
               />
             ))}
           </div>
+          )}
 
           {/* ── Row 1: GRAND | MAJOR | STACK dropdown ── */}
           <div className="flex gap-2 items-center flex-wrap">

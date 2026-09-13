@@ -228,7 +228,7 @@ import WheelFeature          from "./wheelFeature";
 import ZoneFeature           from "./zoneFeature";
 import TowerFeature          from "./towerFeature";
 import CombinationFeature    from "./combinationFeature";
-import { reels }             from "./reels";
+import { reels, setReels }   from "./reels";
 import {
   generateGaffe,
   getBaseCoinsForFeature,
@@ -263,6 +263,14 @@ export default function Page() {
   const [majorEnabled,     setMajorEnabled]     = useState<boolean>(false);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
+  // Bumped when an uploaded reelstrip replaces `reels`, so the gaffe recomputes
+  // and the base grid re-renders from the new (live-binding) reels.
+  const [reelsVersion, setReelsVersion] = useState(0);
+  const handleUploadReels = (next: string[][]) => {
+    setReels(next);
+    setReelsVersion((v) => v + 1);
+  };
+
   // ── Navigation ────────────────────────────────────────────────────────────
   const [activeSection,    setActiveSection]    = useState<string>("base");
   const [featureGaffes,    setFeatureGaffes]    = useState<string[]>([]);
@@ -276,13 +284,16 @@ export default function Page() {
 
   // ── Live base gaffe ───────────────────────────────────────────────────────
   const gaffe = useMemo(
-    () => generateGaffe(
-      reelStops, reels,
-      scatColors, scatValues,
-      selectedFeatures, featureEnabled,
-      grandEnabled, majorEnabled, stackSymbol
-    ),
-    [reelStops, scatColors, scatValues, selectedFeatures, featureEnabled, grandEnabled, majorEnabled, stackSymbol]
+    () => {
+      void reelsVersion; // recompute when an uploaded reelstrip replaces `reels` (a live binding)
+      return generateGaffe(
+        reelStops, reels,
+        scatColors, scatValues,
+        selectedFeatures, featureEnabled,
+        grandEnabled, majorEnabled, stackSymbol
+      );
+    },
+    [reelStops, scatColors, scatValues, selectedFeatures, featureEnabled, grandEnabled, majorEnabled, stackSymbol, reelsVersion]
   );
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -379,6 +390,7 @@ export default function Page() {
             selectedFeatures={selectedFeatures}
             setSelectedFeatures={setSelectedFeatures}
             onGoTo={handleGoTo}
+            onUploadReels={handleUploadReels}
           />
 
           {/* ── COMBINATION (2+ features) — single unified panel ─────── */}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import BaseGame from "./base-game";
 import GaffeOutput from "@/games/triple-piggy-pays/components/GaffeOutput";
-import { reels } from "./reels";
+import { reels, setReels } from "./reels";
 import { generateGaffe } from "@/games/triple-piggy-pays/utils/gaffeGenerator";
 import { useRouter } from "next/navigation";
 import FeatureFinal from "./FeatureFinal"
@@ -29,6 +29,14 @@ export default function Home() {
   const [activeFeatures, setActiveFeatures] = useState<
   ("WHEEL" | "TOWER" | "ZONE")[]
 >([]);
+
+  // Bumped when an uploaded reelstrip replaces `reels`, forcing a re-render so
+  // the inline gaffe + base grid pick up the new (live-binding) reels.
+  const [, setReelsVersion] = useState(0);
+  const handleUploadReels = (next: string[][]) => {
+    setReels(next);
+    setReelsVersion((v) => v + 1);
+  };
 
   const gaffe = generateGaffe(
     reelStops,
@@ -105,6 +113,7 @@ const [featureOutput, setFeatureOutput] = useState<string[]>([]);
             featureTriggers={featureTriggers}
             setFeatureTriggers={setFeatureTriggers}
            setActiveFeatures={setActiveFeatures}
+            onUploadReels={handleUploadReels}
           />
 
           {/* FUTURE */}

@@ -10,7 +10,7 @@ import WheelFeature          from "./wheelFeature";
 import ZoneFeature           from "./zoneFeature";
 import TowerFeature          from "./towerFeature";
 import CombinationFeature    from "./combinationFeature";
-import { reels }             from "./reels";
+import { reels, setReels }   from "./reels";
 import {
   generateGaffe,
   getBaseCoinsForFeature,
@@ -36,7 +36,8 @@ const F_LABEL: Record<string, string> = {
 export default function Page() {
 
   // ── Base game state ───────────────────────────────────────────────────────
-  const [reelStops,        setReelStops]        = useState<number[]>([0, 0, 0, 0, 0]);
+  // Starts empty — the grid is populated only from an uploaded reelstrip.
+  const [reelStops,        setReelStops]        = useState<number[]>([]);
   const [scatColors,       setScatColors]       = useState<{ [key: string]: ScatType }>({});
   const [scatValues,       setScatValues]       = useState<{ [key: string]: string }>({});
   const [stackSymbol,      setStackSymbol]      = useState<string | null>(null);
@@ -44,6 +45,24 @@ export default function Page() {
   const [grandEnabled,     setGrandEnabled]     = useState<boolean>(false);
   const [majorEnabled,     setMajorEnabled]     = useState<boolean>(false);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+
+  // ── Dynamic grid: global row count + one global anchor-row offset ──────────
+  const [rows,   setRows]   = useState<number>(4);
+  const [offset, setOffset] = useState<number>(0);
+  // Keep the offset within the current row range when rows shrinks.
+  const handleSetRows = (r: number) => {
+    setRows(r);
+    setOffset((o) => Math.max(0, Math.min(o, r - 1)));
+  };
+
+  // Bumped whenever the reels are replaced by an uploaded reelstrip, so the
+  // gaffe recomputes and the base grid re-renders from the new (live) reels.
+  const [reelsVersion, setReelsVersion] = useState(0);
+  const handleUploadReels = (next: string[][]) => {
+    setReels(next);
+    setReelStops(Array(next.length).fill(0));
+    setReelsVersion((v) => v + 1);
+  };
 
   // ── Navigation ────────────────────────────────────────────────────────────
   const [activeSection,    setActiveSection]    = useState<string>("base");
@@ -60,13 +79,17 @@ export default function Page() {
 
   // ── Live base gaffe ───────────────────────────────────────────────────────
   const gaffe = useMemo(
-    () => generateGaffe(
-      reelStops, reels,
-      scatColors, scatValues,
-      selectedFeatures, featureEnabled,
-      grandEnabled, majorEnabled, stackSymbol
-    ),
-    [reelStops, scatColors, scatValues, selectedFeatures, featureEnabled, grandEnabled, majorEnabled, stackSymbol]
+    () => {
+      void reelsVersion; // recompute when an uploaded reelstrip replaces `reels` (a live binding)
+      return generateGaffe(
+        reelStops, reels,
+        scatColors, scatValues,
+        selectedFeatures, featureEnabled,
+        grandEnabled, majorEnabled, stackSymbol,
+        rows, offset
+      );
+    },
+    [reelStops, scatColors, scatValues, selectedFeatures, featureEnabled, grandEnabled, majorEnabled, stackSymbol, rows, offset, reelsVersion]
   );
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -82,14 +105,14 @@ export default function Page() {
     if (features.length === 1) {
       // Single feature
       const coins = getBaseCoinsForFeature(
-        features[0], reelStops, reels, scatColors, scatValues
+        features[0], reelStops, reels, scatColors, scatValues, rows, offset
       );
       setSingleBaseCoins(coins);
       setComboBaseCoins([]);
     } else {
       // Combination — collect all relevant SCaT coins in one pass
       const coins = getBaseCoinsForCombination(
-        features, reelStops, reels, scatColors, scatValues
+        features, reelStops, reels, scatColors, scatValues, rows, offset
       );
       setComboBaseCoins(coins);
       setSingleBaseCoins([]);
@@ -182,6 +205,9 @@ export default function Page() {
             selectedFeatures={selectedFeatures}
             setSelectedFeatures={setSelectedFeatures}
             onGoTo={handleGoTo}
+            onUploadReels={handleUploadReels}
+            rows={rows}     setRows={handleSetRows}
+            offset={offset} setOffset={setOffset}
           />
 
           {/* ── COMBINATION (2+ features) — single unified panel ─────── */}

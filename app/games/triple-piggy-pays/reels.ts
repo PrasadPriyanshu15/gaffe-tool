@@ -1,4 +1,4 @@
-export const reels = [
+export let reels: string[][] = [
  [
   "STACK",
   "STACK",
@@ -330,3 +330,9 @@ export const reels = [
 ]
 ];
 
+
+
+/** Replace the active reels at runtime (used by the in-browser reelstrip uploader). */
+export function setReels(next: string[][]): void {
+  reels = next;
+}

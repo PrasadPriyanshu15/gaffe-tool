@@ -265,6 +265,7 @@
 import { useState } from "react";
 import ReelColumn, { VISIBLE_OFFSETS, ScatType, ScatKey } from "./ReelColumn";
 import { reels } from "./reels";
+import ReelstripUploader from "@/components/ReelstripUploader";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -286,6 +287,7 @@ type Props = {
   selectedFeatures:    string[];
   setSelectedFeatures: (val: string[]) => void;
   onGoTo:              (features: string[]) => void;
+  onUploadReels?:      (reels: string[][]) => void;
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -333,6 +335,7 @@ export default function BaseGame({
   majorEnabled,       setMajorEnabled,
   selectedFeatures,   setSelectedFeatures,
   onGoTo,
+  onUploadReels,
 }: Props) {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -371,6 +374,9 @@ export default function BaseGame({
 
       {isOpen && (
         <div className="px-4 pb-5 flex flex-col gap-5">
+
+          {/* ── Upload reelstrip ── */}
+          <ReelstripUploader onLoaded={onUploadReels} />
 
           {/* ── Reel columns ── */}
           <div className="flex gap-2 overflow-x-auto pb-1">
