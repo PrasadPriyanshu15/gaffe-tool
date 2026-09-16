@@ -130,6 +130,26 @@ export default function Page() {
   };
 
   /**
+   * Reset the base game back to its initial position and state. Keeps the
+   * uploaded reelstrip loaded but returns every stop to 0 and clears all
+   * assigned SCaT colours/values, the stack override, feature toggles and any
+   * selected features. Also navigates back to the base view.
+   */
+  const handleReset = () => {
+    setReelStops(reels.length ? Array(reels.length).fill(0) : []);
+    setScatColors({});
+    setScatValues({});
+    setStackSymbol(null);
+    setFeatureEnabled(true);
+    setGrandEnabled(false);
+    setMajorEnabled(false);
+    setSelectedFeatures([]);
+    setRows(4);
+    setOffset(0);
+    handleBack();
+  };
+
+  /**
    * Feature upgrade: an upgrade coin landed in the current feature. Grow the
    * active feature set by `newFeature`, carrying the full grid (`carried`)
    * forward into the combination view. The prior spin log is kept.
@@ -205,6 +225,7 @@ export default function Page() {
             selectedFeatures={selectedFeatures}
             setSelectedFeatures={setSelectedFeatures}
             onGoTo={handleGoTo}
+            onReset={handleReset}
             onUploadReels={handleUploadReels}
             rows={rows}     setRows={handleSetRows}
             offset={offset} setOffset={setOffset}

@@ -28,6 +28,7 @@ type Props = {
   selectedFeatures:    string[];
   setSelectedFeatures: (val: string[]) => void;
   onGoTo:              (features: string[]) => void;
+  onReset:             () => void;
   onUploadReels?:      (reels: string[][]) => void;
   rows:                number;
   setRows:             (val: number) => void;
@@ -80,6 +81,7 @@ export default function BaseGame({
   majorEnabled,       setMajorEnabled,
   selectedFeatures,   setSelectedFeatures,
   onGoTo,
+  onReset,
   onUploadReels,
   rows,               setRows,
   offset,             setOffset,
@@ -113,7 +115,19 @@ export default function BaseGame({
         onClick={() => setIsOpen(!isOpen)}
       >
         <h2 className="text-base font-bold text-white">Base Game</h2>
-        <span className="text-gray-400 text-sm">{isOpen ? "▼" : "▶"}</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onReset();
+            }}
+            title="Reset the base game to its initial position and state"
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-500 text-gray-200 hover:bg-gray-700 hover:border-gray-300 transition-all"
+          >
+            ↺ Reset
+          </button>
+          <span className="text-gray-400 text-sm">{isOpen ? "▼" : "▶"}</span>
+        </div>
       </div>
 
       {isOpen && (
