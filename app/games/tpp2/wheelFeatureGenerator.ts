@@ -38,7 +38,7 @@ export const UNLOCKED_POSITIONS: number[] = (() => {
 // ─── RED coin sequence (12 values, used one per spin in order) ────────────────
 export const RED_COIN_SEQUENCE: string[] = [
   "RED_COIN 100000", "RED_COIN 50000", "RED_COIN 1000", "RED_COIN 100",
-  "RED_COIN 50",     "RED_COIN 10",    "RED_COIN 10",   "RED_COIN 1",
+  "RED_COIN 100",     "RED_COIN 50",    "RED_COIN 10",   "RED_COIN 10",
   "RED_COIN 1",      "RED_COIN 1",     "RED_COIN 1",    "RED_COIN 1",
 ];
 

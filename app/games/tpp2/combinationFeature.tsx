@@ -116,6 +116,11 @@ export default function CombinationFeature({
   const [redCoinIdx,    setRedCoinIdx]    = useState(0);
   const [blueCoinIdx,   setBlueCoinIdx]   = useState(0);
   const [purpleCoinIdx, setPurpleCoinIdx] = useState(0);
+  // Coins that have LANDED but were later swallowed by a zone. A coin that has
+  // landed must keep counting toward its max — absorption removes it from the
+  // grid but must NOT free up a slot — so we tally absorbed colored coins here
+  // and add them back into the counts below. Reset on reseed / reset only.
+  const [absorbed,      setAbsorbed]      = useState<{ red: number; blue: number; purple: number }>({ red: 0, blue: 0, purple: 0 });
  
   // Track previously computed fUnlock to detect when a new row unlocks
   const prevFUnlock = useRef<number>(ROWS_LOCKED);
@@ -153,6 +158,7 @@ export default function CombinationFeature({
     setRedCoinIdx(0);
     setBlueCoinIdx(0);
     setPurpleCoinIdx(0);
+    setAbsorbed({ red: 0, blue: 0, purple: 0 });
     prevFUnlock.current = ROWS_LOCKED;
 
     const snap = new Set<number>();
@@ -185,9 +191,13 @@ export default function CombinationFeature({
   }, [fUnlock]);
  
   // ── Counters ──────────────────────────────────────────────────────────────
-  const redCount    = grid.flat().filter(c => c.type === "RED").length;
-  const blueCount   = grid.flat().filter(c => c.type === "BLUE").length;
-  const purpleCount = grid.flat().filter(c => c.type === "PURPLE").length;
+  // Count = coins currently on the grid PLUS coins that have already landed but
+  // were later absorbed by a zone. This keeps a landed coin counted for good
+  // (its slot is never given back by absorption), so each color reaches its
+  // full, stable max: 12 red, 8 blue, 12 purple.
+  const redCount    = grid.flat().filter(c => c.type === "RED").length    + absorbed.red;
+  const blueCount   = grid.flat().filter(c => c.type === "BLUE").length   + absorbed.blue;
+  const purpleCount = grid.flat().filter(c => c.type === "PURPLE").length + absorbed.purple;
  
   // ── Grid helpers ─────────────────────────────────────────────────────────
   const applyGrid = (fn: (g: ComboCell[][]) => ComboCell[][]): void => {
@@ -383,6 +393,9 @@ export default function CombinationFeature({
     let finalGrid = grid;
     if (hasZn && zones.length > 0) {
       const ng = grid.map(row => row.map(c => ({ ...c })));
+      // Tally colored coins swallowed this spin — they've already landed, so
+      // they must stay counted even though they leave the grid.
+      let absRed = 0, absBlue = 0, absPurple = 0;
       const updatedZones = zones
         .map(zone => {
           zone.cells.forEach(([zr, zc]) => {
@@ -390,6 +403,10 @@ export default function CombinationFeature({
             if (!isUnlocked(zr)) return;
             const isAnchor = zone.anchors.some(([ar, ac]) => ar === zr && ac === zc);
             if (!isAnchor && ng[zr][zc].type !== "EMPTY") {
+              const t = ng[zr][zc].type;
+              if      (t === "RED")    absRed++;
+              else if (t === "BLUE")   absBlue++;
+              else if (t === "PURPLE") absPurple++;
               ng[zr][zc] = { type: "EMPTY" };
             }
           });
@@ -399,6 +416,13 @@ export default function CombinationFeature({
       setGrid(ng);
       setZones(updatedZones);
       finalGrid = ng;
+      if (absRed || absBlue || absPurple) {
+        setAbsorbed(prev => ({
+          red:    prev.red    + absRed,
+          blue:   prev.blue   + absBlue,
+          purple: prev.purple + absPurple,
+        }));
+      }
     }
  
     // Snapshot becomes the POST-absorption state, in global positions.
@@ -429,6 +453,7 @@ export default function CombinationFeature({
     setRedCoinIdx(0);
     setBlueCoinIdx(0);
     setPurpleCoinIdx(0);
+    setAbsorbed({ red: 0, blue: 0, purple: 0 });
     prevFUnlock.current = ROWS_LOCKED;
     const snap = new Set<number>();
     g.forEach((row, r) => row.forEach((cell, c) => {

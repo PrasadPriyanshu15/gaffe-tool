@@ -255,11 +255,24 @@ export function nextCellType(
   counts:   { red: number; blue: number; purple: number },
   locked:   boolean
 ): ComboCell["type"] {
+  // This cell is about to leave its current color, so it must NOT count against
+  // its own color's max when we build the cycle order. Otherwise a cell whose
+  // color just hit the cap (e.g. the RED that pushed red to 12/12) drops out of
+  // the sequence and can never advance to the next color — you get stuck
+  // cycling GOLD ↔ RED and can never reach PURPLE. Discounting the current cell
+  // keeps the color in the ordering so the cycle can pass through it, while the
+  // caps still block LANDING a brand-new coin of a color that is already full.
+  const eff = {
+    red:    counts.red    - (current === "RED"    ? 1 : 0),
+    blue:   counts.blue   - (current === "BLUE"   ? 1 : 0),
+    purple: counts.purple - (current === "PURPLE" ? 1 : 0),
+  };
+
   const seq: ComboCell["type"][] = ["GOLD"];
-  if (hasWheel(features) && counts.red    < MAX_RED)    seq.push("RED");
-  if (hasTower(features) && locked && counts.blue < MAX_BLUE)   seq.push("BLUE");
-  if (hasZone(features)  && counts.purple < MAX_PURPLE) seq.push("PURPLE");
- 
+  if (hasWheel(features) && eff.red    < MAX_RED)            seq.push("RED");
+  if (hasTower(features) && locked && eff.blue   < MAX_BLUE)   seq.push("BLUE");
+  if (hasZone(features)  && eff.purple < MAX_PURPLE)         seq.push("PURPLE");
+
   const idx = seq.indexOf(current);
   if (idx === -1 || idx === seq.length - 1) return "GOLD";
   return seq[idx + 1];
