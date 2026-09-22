@@ -411,14 +411,18 @@ export function countUnlockedCoins(grid: ComboCell[][], fUnlocked: number): numb
  * unlocks. This mirrors the standalone Tower feature's fix: a tiny
  * fixed-point loop (monotonic, converges in at most ROWS_LOCKED steps).
  */
-export function computeUnlockState(grid: ComboCell[][]): {
+export function computeUnlockState(grid: ComboCell[][], bonusUnlockedCoins = 0): {
   fUnlocked: number;
   totalUnlockedCoins: number;
   extra: number;
 } {
+  // `bonusUnlockedCoins` = coins that already LANDED in unlocked rows but were
+  // later swallowed by a zone. Unlock progress is driven by what has landed, not
+  // by what is still on the grid, so absorbed coins keep counting here. Default 0
+  // leaves the standalone Tower behaviour (no zones) unchanged.
   let fUnlocked = ROWS_LOCKED;
   for (let i = 0; i < ROWS_LOCKED; i++) {
-    const count = countUnlockedCoins(grid, fUnlocked);
+    const count = countUnlockedCoins(grid, fUnlocked) + bonusUnlockedCoins;
     const extra = extraUnlockedRows(count);
     const next  = ROWS_LOCKED - extra;
     if (next === fUnlocked) {
@@ -426,7 +430,7 @@ export function computeUnlockState(grid: ComboCell[][]): {
     }
     fUnlocked = next;
   }
-  const count = countUnlockedCoins(grid, fUnlocked);
+  const count = countUnlockedCoins(grid, fUnlocked) + bonusUnlockedCoins;
   return { fUnlocked, totalUnlockedCoins: count, extra: extraUnlockedRows(count) };
 }
  
