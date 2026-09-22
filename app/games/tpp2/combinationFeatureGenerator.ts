@@ -522,14 +522,16 @@ export function generateComboGaffe(
     parts.push(`unlockedColorCoinsReelPosition:[${b},${p},${r}]`);
   }
  
-  // 3 ── lockedBlueCoinsReelPosition — ALL blue coins currently in locked rows.
-  // Blue is Tower's own coin and keeps its accumulator format. Red/purple that
-  // land in locked rows are reported per-spin below (lockedPurpleRedCoins*),
-  // NOT accumulated here.
+  // 3 ── lockedBlueCoinsReelPosition — only NEW blue coins that landed this spin.
+  // Blue is Tower's own coin; report just this spin's blue coin(s) and do NOT
+  // carry forward positions from previous spins (reelStops is unaffected).
+  // Red/purple that land in locked rows are reported per-spin below
+  // (lockedPurpleRedCoins*), NOT accumulated here.
   const lockedBlue: string[] = [];
   grid.forEach((rowArr, r) => rowArr.forEach((cell, c) => {
     const pos = gridToPos(r, c, features);
     if (!isPosLocked(pos)) return;
+    if (prevSnap.has(pos)) return;          // skip coins carried from prior spins
     const globalRow = pos % ROWS_TOTAL;
     if (cell.type === "BLUE") lockedBlue.push(`[${globalRow},${pos}]`);
   }));

@@ -418,11 +418,14 @@ export function generateTowerGaffe(
     }
   }));
  
-  // 3 ── lockedBlueCoinsReelPosition (all blue coins present) ───────────────
+  // 3 ── lockedBlueCoinsReelPosition (only NEW blue coins this spin) ─────────
+  // Report just the blue coin(s) that landed this spin; do NOT carry forward
+  // positions from previous spins (reelStops is unaffected).
   const blueEntries: string[] = [];
   grid.forEach((rowArr, r) => rowArr.forEach((cell, c) => {
     if (cell.type !== "BLUE") return;
     if (r >= ROWS_LOCKED) return;           // blue only in locked rows 0-7
+    if (prevSnap.has(posIdx(r, c))) return; // skip coins carried from prior spins
     blueEntries.push(`[${r},${posIdx(r, c)}]`);
   }));
   if (blueEntries.length > 0) {

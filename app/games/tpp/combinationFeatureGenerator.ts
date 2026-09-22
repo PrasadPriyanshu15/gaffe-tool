@@ -869,7 +869,9 @@ export function generateComboGaffe(
     const pos = gridToPos(r, c, features);
     if (!isPosLocked(pos)) return;
     const globalRow = pos % ROWS_TOTAL;
-    if (cell.type === "BLUE")   lockedBlue.push(`[${globalRow},${pos}]`);
+    // Blue is Tower's own coin: report only NEW blue coins this spin (do NOT
+    // carry forward positions from previous spins). Red/purple stay accumulated.
+    if (cell.type === "BLUE"   && !prevSnap.has(pos)) lockedBlue.push(`[${globalRow},${pos}]`);
     if (cell.type === "RED")    lockedRed.push(`[${globalRow},${pos}]`);
     if (cell.type === "PURPLE") lockedPurple.push(`[${globalRow},${pos}]`);
   }));
