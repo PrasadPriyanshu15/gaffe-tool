@@ -28,7 +28,7 @@ type Props = {
   baseCoins: { position: number; value: string }[];
   onSpin:    (line: string) => void;
   onReset:   () => void;
-  onUpgrade?: (feature: FeatureKey, carried: CarriedCoin[]) => void;
+  onUpgrade?: (feature: FeatureKey, carried: CarriedCoin[], bonusUnlock: number) => void;
 };
  
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -100,7 +100,8 @@ export default function ZoneFeature({ baseCoins, onSpin, onReset, onUpgrade }: P
     const out: CarriedCoin[] = [];
     g.forEach((row, r) => row.forEach((cell, c) => {
       if (cell.type === "EMPTY") return;
-      out.push({ pos: gridToPos(r, c), type: cell.type, value: cell.value });
+      const pos = gridToPos(r, c);
+      out.push({ pos, type: cell.type, value: cell.value, fromBase: basePositions.has(pos) });
     }));
     return out;
   };
@@ -195,7 +196,10 @@ export default function ZoneFeature({ baseCoins, onSpin, onReset, onUpgrade }: P
     // Run zone absorption FIRST so coins swallowed this spin don't carry over.
     if (upgradeCoin && onUpgrade) {
       const { grid: absorbedGrid } = processZoneOnSpin(grid, zones);
-      onUpgrade(UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color], buildCarried(absorbedGrid));
+      // The upgrade coin sits in an always-unlocked row, so it carries +1 toward
+      // tower row-unlock progress if the target combination includes Tower
+      // (ignored otherwise, since only Tower tracks unlock).
+      onUpgrade(UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color], buildCarried(absorbedGrid), 1);
       return;
     }
  
@@ -351,8 +355,9 @@ export default function ZoneFeature({ baseCoins, onSpin, onReset, onUpgrade }: P
                 const anchorZone = cell.type === "PURPLE" ? getZoneForAnchor(r, c, zones) : null;
                 const showCharge = anchorZone && anchorZone.charges > 0;
                 const isUpgrade  = upgradeCoin?.pos === pos;
+                const isEPos     = eReelPos?.pos === pos;
                 const armable    = armedColor !== null && isEmpty && !isUpgrade;
- 
+
                 // Pre-extract to avoid TS narrowing errors in JSX
                 const cellValue = cell.type !== "EMPTY" ? cell.value : "";
  
@@ -362,6 +367,7 @@ export default function ZoneFeature({ baseCoins, onSpin, onReset, onUpgrade }: P
                     onClick={() => handleCellClick(r, c)}
                     className={`relative rounded-lg border-2 flex flex-col
                       items-center justify-center p-1.5 transition-all cursor-pointer ${bg}
+                      ${isEPos ? "ring-2 ring-yellow-400" : ""}
                       ${isUpgrade ? "ring-2 ring-green-400" : ""}
                       ${armable ? "ring-2 ring-green-500/60 ring-dashed" : ""}`}
                     style={{ minHeight: cell.type === "PURPLE" ? "110px" : cell.type === "GOLD" ? "88px" : "58px" }}

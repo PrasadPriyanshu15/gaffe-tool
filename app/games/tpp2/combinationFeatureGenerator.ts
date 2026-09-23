@@ -72,6 +72,10 @@ export type CarriedCoin = {
   type:        "GOLD" | "RED" | "BLUE" | "PURPLE";
   value:       string;
   multiplier?: string;
+  /** True when this coin originated from a base-game SCaT (the coin that
+   *  triggered the feature). Preserved across upgrades so a feature reset can
+   *  keep the trigger coins while clearing everything added during play. */
+  fromBase?:   boolean;
 };
  
 // ─── Cell type ────────────────────────────────────────────────────────────────

@@ -32,9 +32,12 @@ type Props = {
   selectedFeatures: FeatureKey[];
   baseCoins: Array<{ position: number; value: string; featureKey: string }>;
   carriedCoins?: CarriedCoin[];
+  /** Row-unlock credit carried in from the upgrade that opened this combination
+   *  (landed-but-vanished coins, e.g. the upgrade coin itself). */
+  carriedUnlockBonus?: number;
   onSpin:    (line: string) => void;
   onReset:   () => void;
-  onUpgrade?: (feature: FeatureKey, carried: CarriedCoin[]) => void;
+  onUpgrade?: (feature: FeatureKey, carried: CarriedCoin[], bonusUnlock: number) => void;
 };
  
 // ─── Display metadata ─────────────────────────────────────────────────────────
@@ -90,13 +93,34 @@ function rebuildZonesFromUnlocked(
  
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function CombinationFeature({
-  selectedFeatures, baseCoins, carriedCoins, onSpin, onReset, onUpgrade,
+  selectedFeatures, baseCoins, carriedCoins, carriedUnlockBonus, onSpin, onReset, onUpgrade,
 }: Props) {
   // Initial grid: from carried coins when arriving via an upgrade, else from base coins.
   const seedGrid = (): ComboCell[][] =>
     (carriedCoins && carriedCoins.length > 0)
       ? seedCarriedGrid(carriedCoins, selectedFeatures)
       : seedCombinedGrid(baseCoins, selectedFeatures);
+
+  // Grid holding ONLY the base-game trigger coins — used by reset, which keeps
+  // those coins and clears everything added/carried during play.
+  const seedBaseOnly = (): ComboCell[][] =>
+    (carriedCoins && carriedCoins.length > 0)
+      ? seedCarriedGrid(carriedCoins.filter(c => c.fromBase), selectedFeatures)
+      : seedCombinedGrid(baseCoins, selectedFeatures);
+
+  // Global flat positions of the base-game trigger coins for the current seed.
+  const computeBasePositions = (g: ComboCell[][]): Set<number> => {
+    const s = new Set<number>();
+    if (carriedCoins && carriedCoins.length > 0) {
+      carriedCoins.forEach(cc => { if (cc.fromBase) s.add(cc.pos); });
+    } else {
+      // Fresh combo entry: seedCombinedGrid seeds only base coins.
+      g.forEach((row, r) => row.forEach((cell, c) => {
+        if (cell.type !== "EMPTY") s.add(gridToPos(r, c, selectedFeatures));
+      }));
+    }
+    return s;
+  };
 
   // Multipliers already used by carried RED coins (so they stay marked as spent).
   const collectUsedMults = (g: ComboCell[][]): Set<string> => {
@@ -123,13 +147,16 @@ export default function CombinationFeature({
   // absorbed coin (GOLD included) that was sitting in an unlocked row, so tower
   // row-unlock progress is driven by what has LANDED, not by what survives
   // absorption. Reset on reseed / reset only.
-  const [absorbed,      setAbsorbed]      = useState<{ red: number; blue: number; purple: number; unlock: number }>({ red: 0, blue: 0, purple: 0, unlock: 0 });
+  const [absorbed,      setAbsorbed]      = useState<{ red: number; blue: number; purple: number; unlock: number }>({ red: 0, blue: 0, purple: 0, unlock: carriedUnlockBonus ?? 0 });
  
   // Track previously computed fUnlock to detect when a new row unlocks
   const prevFUnlock = useRef<number>(ROWS_LOCKED);
   const zoneCounter = useRef(0);
   /** Snapshot of GLOBAL flat positions occupied at the last spin. */
   const lastSnapshot = useRef<Set<number>>(new Set());
+  /** GLOBAL flat positions of the base-game coins that triggered this feature.
+   *  Preserved on reset; recomputed whenever the grid is (re)seeded. */
+  const baseCoinPositions = useRef<Set<number>>(new Set());
  
   const nextId = () => `z${++zoneCounter.current}`;
  
@@ -153,6 +180,7 @@ export default function CombinationFeature({
       : [];
     setGrid(g);
     setZones(seedZones);
+    baseCoinPositions.current = computeBasePositions(g);
     setSpinsLeft(MAX_SPINS);
     setUsedMults(collectUsedMults(g));
     setEReelPos(null);
@@ -161,7 +189,10 @@ export default function CombinationFeature({
     setRedCoinIdx(0);
     setBlueCoinIdx(0);
     setPurpleCoinIdx(0);
-    setAbsorbed({ red: 0, blue: 0, purple: 0, unlock: 0 });
+    // Seed row-unlock credit carried in from the upgrade (the landed-but-vanished
+    // upgrade coin, plus any credit accumulated in prior features) so a row that
+    // unlocked right before the upgrade stays unlocked here.
+    setAbsorbed({ red: 0, blue: 0, purple: 0, unlock: carriedUnlockBonus ?? 0 });
     prevFUnlock.current = ROWS_LOCKED;
 
     const snap = new Set<number>();
@@ -172,8 +203,16 @@ export default function CombinationFeature({
   }, [JSON.stringify(baseCoins), JSON.stringify(carriedCoins), JSON.stringify(selectedFeatures)]);
  
   // ── Derived: unlock state (fixed-point, matches standalone Tower) ─────────
+  // A red/purple UPGRADE coin sitting in an unlocked row has landed, so it
+  // counts toward row-unlock progress just like a normal coin — even though it
+  // is never written into the grid and vanishes on the next spin. Gate the
+  // "is it in an unlocked row?" test on the grid+absorbed boundary (without the
+  // upgrade coin) to avoid a self-referential loop, exactly as standalone Tower.
+  const upgradeInUnlockedRow =
+    isTwr && !!upgradeCoin &&
+    (upgradeCoin.pos % ROWS_TOTAL) >= computeUnlockState(grid, absorbed.unlock).fUnlocked;
   const { fUnlocked: fUnlock, totalUnlockedCoins } = isTwr
-    ? computeUnlockState(grid, absorbed.unlock)
+    ? computeUnlockState(grid, absorbed.unlock + (upgradeInUnlockedRow ? 1 : 0))
     : { fUnlocked: 0, totalUnlockedCoins: 0 };
   const hint = isTwr ? unlockHint(totalUnlockedCoins) : null;
  
@@ -212,9 +251,10 @@ export default function CombinationFeature({
     const out: CarriedCoin[] = [];
     g.forEach((row, r) => row.forEach((cell, c) => {
       if (cell.type === "EMPTY") return;
-      const pos = gridToPos(r, c, selectedFeatures);
-      if (cell.type === "RED") out.push({ pos, type: "RED", value: cell.value, multiplier: cell.multiplier });
-      else                     out.push({ pos, type: cell.type, value: (cell as any).value });
+      const pos      = gridToPos(r, c, selectedFeatures);
+      const fromBase = baseCoinPositions.current.has(pos);
+      if (cell.type === "RED") out.push({ pos, type: "RED", value: cell.value, multiplier: cell.multiplier, fromBase });
+      else                     out.push({ pos, type: cell.type, value: (cell as any).value, fromBase });
     }));
     return out;
   };
@@ -369,16 +409,24 @@ export default function CombinationFeature({
     // Apply zone absorption FIRST so coins swallowed this spin don't carry over.
     if (upgradeCoin && onUpgrade) {
       let carriedGrid = grid;
+      let absThisSpin = 0;                             // coins swallowed this spin
       if (hasZn && zones.length > 0) {
         const ng = grid.map(row => row.map(c => ({ ...c })));
         zones.forEach(zone => zone.cells.forEach(([zr, zc]) => {
           if (!isUnlocked(zr)) return;                 // locked rows don't absorb
           const isAnchor = zone.anchors.some(([ar, ac]) => ar === zr && ac === zc);
-          if (!isAnchor && ng[zr][zc].type !== "EMPTY") ng[zr][zc] = { type: "EMPTY" };
+          if (!isAnchor && ng[zr][zc].type !== "EMPTY") { ng[zr][zc] = { type: "EMPTY" }; absThisSpin++; }
         }));
         carriedGrid = ng;
       }
-      onUpgrade(UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color], buildCarried(carriedGrid));
+      // Carry forward all row-unlock credit that is NOT represented by a coin on
+      // the carried grid: credit accumulated so far (`absorbed.unlock`, which
+      // already includes the bonus seeded on entry), coins swallowed this spin,
+      // and the landed-but-vanished upgrade coin itself. Without Tower every
+      // position is always-unlocked, so the upgrade coin always counts.
+      const upgradeCredit = isTwr ? (upgradeInUnlockedRow ? 1 : 0) : 1;
+      const forwardBonus  = absorbed.unlock + absThisSpin + upgradeCredit;
+      onUpgrade(UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color], buildCarried(carriedGrid), forwardBonus);
       return;
     }
  
@@ -444,7 +492,10 @@ export default function CombinationFeature({
   };
  
   const handleReset = () => {
-    const g = seedGrid();
+    // Reset clears everything added/carried during play but KEEPS the base-game
+    // coins that triggered the feature. Any locked-row structure returns to its
+    // initial state on its own, since `fUnlock` is derived from the grid.
+    const g = seedBaseOnly();
     zoneCounter.current = 0;
     const fu = hasZone(selectedFeatures)
       ? (hasTower(selectedFeatures) ? computeUnlockState(g).fUnlocked : 0)
@@ -453,6 +504,7 @@ export default function CombinationFeature({
     setZones(hasZone(selectedFeatures)
       ? rebuildZonesFromUnlocked(g, fu, gridRows(selectedFeatures), COLS, nextId)
       : []);
+    baseCoinPositions.current = computeBasePositions(g);
     setSpinsLeft(MAX_SPINS);
     setUsedMults(collectUsedMults(g));
     setEReelPos(null);

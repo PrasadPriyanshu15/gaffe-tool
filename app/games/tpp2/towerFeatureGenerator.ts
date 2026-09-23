@@ -139,14 +139,19 @@ export function countBlue(grid: TowerCell[][]): number {
  * in that window, see if that count unlocks a wider window, and repeat
  * until the window stops growing.
  */
-export function computeUnlockState(grid: TowerCell[][]): {
+export function computeUnlockState(grid: TowerCell[][], bonusUnlockedCoins = 0): {
   fUnlocked: number;
   totalUnlockedCoins: number;
   extra: number;
 } {
+  // `bonusUnlockedCoins` = coins that count toward row-unlock progress but are
+  // not stored in the grid (e.g. a red/purple UPGRADE coin sitting in an
+  // unlocked row). It has landed, so it counts here; it still disappears on the
+  // next spin without ever being written into the grid. Default 0 leaves the
+  // plain grid-only behaviour unchanged.
   let fUnlocked = ROWS_LOCKED;
   for (let i = 0; i < ROWS_LOCKED; i++) {
-    const count = countUnlockedCoins(grid, fUnlocked);
+    const count = countUnlockedCoins(grid, fUnlocked) + bonusUnlockedCoins;
     const extra = extraUnlockedRows(count);
     const next  = ROWS_LOCKED - extra;
     if (next === fUnlocked) {
@@ -154,7 +159,7 @@ export function computeUnlockState(grid: TowerCell[][]): {
     }
     fUnlocked = next;
   }
-  const count = countUnlockedCoins(grid, fUnlocked);
+  const count = countUnlockedCoins(grid, fUnlocked) + bonusUnlockedCoins;
   return { fUnlocked, totalUnlockedCoins: count, extra: extraUnlockedRows(count) };
 }
  

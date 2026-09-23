@@ -26,7 +26,7 @@ type Props = {
   baseCoins:               { position: number; value: string }[];
   onSpin:                  (line: string) => void;
   onReset:                 () => void;
-  onUpgrade?:              (feature: FeatureKey, carried: CarriedCoin[]) => void;
+  onUpgrade?:              (feature: FeatureKey, carried: CarriedCoin[], bonusUnlock: number) => void;
   sharedSpentMultipliers?: string[];
   onMultiplierSpent?:      (val: string) => void;
 };
@@ -130,9 +130,10 @@ export default function WheelFeature({
     const out: CarriedCoin[] = [];
     g.forEach((row, r) => row.forEach((cell, c) => {
       if (cell.type === "EMPTY") return;
-      const pos = gridToPos(r, c);
-      if (cell.type === "RED") out.push({ pos, type: "RED", value: cell.value, multiplier: cell.multiplier });
-      else                     out.push({ pos, type: cell.type, value: (cell as any).value });
+      const pos      = gridToPos(r, c);
+      const fromBase = basePositions.has(pos);
+      if (cell.type === "RED") out.push({ pos, type: "RED", value: cell.value, multiplier: cell.multiplier, fromBase });
+      else                     out.push({ pos, type: cell.type, value: (cell as any).value, fromBase });
     }));
     return out;
   };
@@ -195,7 +196,10 @@ export default function WheelFeature({
     // An upgrade coin landed this spin → carry the full grid forward and switch
     // to the upgraded combination view (the upgrade coin itself vanishes).
     if (upgradeCoin && onUpgrade) {
-      onUpgrade(UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color], buildCarried(grid));
+      // The upgrade coin sits in an always-unlocked row, so it carries +1 toward
+      // tower row-unlock progress if the target combination includes Tower
+      // (ignored otherwise, since only Tower tracks unlock).
+      onUpgrade(UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color], buildCarried(grid), 1);
       return;
     }
 
@@ -321,6 +325,7 @@ export default function WheelFeature({
                 const isEmpty  = cell.type === "EMPTY";
                 const isInBase = basePositions.has(pos);
                 const isUpgrade = upgradeCoin?.pos === pos;
+                const isEPos    = eReelPos?.pos === pos;
                 const armable   = armedColor !== null && isEmpty && !isUpgrade;
 
                 // ── Pre-extract typed values to avoid TS narrowing errors in JSX ──
@@ -346,6 +351,7 @@ export default function WheelFeature({
                     onClick={() => handleCellClick(r, c)}
                     className={`relative rounded-lg border-2 bg-[#1a2035] flex flex-col
                       items-center justify-center p-1.5 transition-all cursor-pointer ${borderCls}
+                      ${isEPos ? "ring-2 ring-yellow-400" : ""}
                       ${isUpgrade ? "ring-2 ring-green-400" : ""}
                       ${armable ? "ring-2 ring-green-500/60 ring-dashed" : ""}`}
                     style={{ minHeight: minH }}

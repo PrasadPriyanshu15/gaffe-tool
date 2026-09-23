@@ -7,9 +7,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
  
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
-  TowerCell, ROWS_TOTAL, COLS, ROWS_LOCKED,
+  TowerCell, ROWS_TOTAL, COLS, ROWS_LOCKED, ROWS_INIT,
   MAX_BLUE, MAX_SPINS, GOLD_COIN_VALUES, BLUE_COIN_VALUES, BLUE_COIN_SEQUENCE,
   emptyGrid, seedFromBase, generateTowerGaffe,
   unlockHint, countBlue, computeUnlockState,
@@ -25,7 +25,7 @@ type Props = {
   baseCoins: { position: number; value: string }[];
   onSpin:    (line: string) => void;
   onReset:   () => void;
-  onUpgrade?: (feature: FeatureKey, carried: CarriedCoin[]) => void;
+  onUpgrade?: (feature: FeatureKey, carried: CarriedCoin[], bonusUnlock: number) => void;
 };
  
 // Left-side labels for the 8 locked rows
@@ -65,7 +65,14 @@ export default function TowerFeature({ baseCoins, onSpin, onReset, onUpgrade }: 
   }, [JSON.stringify(baseCoins)]);
  
   // ── Derived ──────────────────────────────────────────────────────────────
-  const { fUnlocked: fUnlock, totalUnlockedCoins } = computeUnlockState(grid);
+  // A red/purple UPGRADE coin sitting in an unlocked row has landed, so it
+  // counts toward row-unlock progress just like a normal coin — even though it
+  // is never written into the grid and vanishes on the next spin. Gate on the
+  // grid-only unlock boundary to avoid a self-referential loop.
+  const upgradeInUnlockedRow =
+    !!upgradeCoin && (upgradeCoin.pos % ROWS_TOTAL) >= computeUnlockState(grid).fUnlocked;
+  const { fUnlocked: fUnlock, totalUnlockedCoins } =
+    computeUnlockState(grid, upgradeInUnlockedRow ? 1 : 0);
   const hint     = unlockHint(totalUnlockedCoins);
   const blueUsed = countBlue(grid);
  
@@ -85,12 +92,28 @@ export default function TowerFeature({ baseCoins, onSpin, onReset, onUpgrade }: 
    *   Unlocked row  → EMPTY → GOLD (gold only; no blue in unlocked rows)
    *   Locked row    → EMPTY → GOLD → BLUE (if slots remain) → GOLD …
    */
+  /**
+   * Flat positions seeded from base-game coins (the coins that triggered the
+   * feature). Derived from props so a reset/upgrade can distinguish trigger
+   * coins from coins added during play.
+   */
+  const basePositions = useMemo(() => {
+    const s = new Set<number>();
+    baseCoins.forEach(({ position }) => {
+      const col      = Math.floor(position / ROWS_INIT);
+      const towerRow = (position % ROWS_INIT) + ROWS_LOCKED;
+      s.add(posIdx(towerRow, col));
+    });
+    return s;
+  }, []);
+
   /** Snapshot every coin in global flat positions, to carry into an upgrade. */
   const buildCarried = (g: TowerCell[][]): CarriedCoin[] => {
     const out: CarriedCoin[] = [];
     g.forEach((row, r) => row.forEach((cell, c) => {
       if (cell.type === "EMPTY") return;
-      out.push({ pos: posIdx(r, c), type: cell.type, value: cell.value });
+      const pos = posIdx(r, c);
+      out.push({ pos, type: cell.type, value: cell.value, fromBase: basePositions.has(pos) });
     }));
     return out;
   };
@@ -176,9 +199,16 @@ export default function TowerFeature({ baseCoins, onSpin, onReset, onUpgrade }: 
     onSpin(generateTowerGaffe(grid, prevSnap, eReelPos, blueCoinIdx, upgradeCoin));
 
     // An upgrade coin landed this spin → carry the full grid forward and switch
-    // to the upgraded combination view (the upgrade coin itself vanishes).
+    // to the upgraded combination view (the upgrade coin itself vanishes). A
+    // colored upgrade coin that landed in an unlocked row has counted toward
+    // row-unlock progress; carry that +1 credit forward so the row stays
+    // unlocked in the combination (the coin is gone, its credit is not).
     if (upgradeCoin && onUpgrade) {
-      onUpgrade(UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color], buildCarried(grid));
+      onUpgrade(
+        UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color],
+        buildCarried(grid),
+        upgradeInUnlockedRow ? 1 : 0,
+      );
     }
   };
  
@@ -383,7 +413,16 @@ export default function TowerFeature({ baseCoins, onSpin, onReset, onUpgrade }: 
                             {isEmpty && !isUpgrade && (
                               <span className="text-gray-600 text-[9px] pointer-events-none">{armable ? "place" : "+"}</span>
                             )}
- 
+
+                            {/* ⚡ E-Reel button — shown on all unlocked cells until one is chosen */}
+                            {eReelPos === null && !locked && !isUpgrade && (
+                              <button
+                                onClick={e => { e.stopPropagation(); handleSetEReelPos(r, c); }}
+                                className="absolute bottom-0.5 left-1 text-[8px] text-yellow-700 hover:text-yellow-400 leading-none select-none"
+                                title={`Set pos ${pos} as typeEReelPosition`}
+                              >⚡E</button>
+                            )}
+
                             {/* GOLD */}
                             {cell.type === "GOLD" && (
                               <div className="flex flex-col items-center gap-1 w-full mt-1">
@@ -402,13 +441,6 @@ export default function TowerFeature({ baseCoins, onSpin, onReset, onUpgrade }: 
                                   <span className="text-[8px] text-gray-500 italic pointer-events-none">
                                     {hint_}
                                   </span>
-                                )}
-                                {!locked && !isEPos && (
-                                  <button
-                                    onClick={e => { e.stopPropagation(); handleSetEReelPos(r, c); }}
-                                    className="text-[9px] text-yellow-700 hover:text-yellow-400 font-bold pointer-events-auto"
-                                    title={`Set pos ${pos} as typeEReelPosition`}
-                                  >⚡E</button>
                                 )}
                                 {locked && (
                                   <span className="text-[8px] text-red-800 italic pointer-events-none">locked</span>
