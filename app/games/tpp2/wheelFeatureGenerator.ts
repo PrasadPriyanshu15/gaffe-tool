@@ -1,5 +1,4 @@
-//! new 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+//! new
 
 import { UpgradeCoin, upgradeValueFor } from "./combinationFeatureGenerator";
 
