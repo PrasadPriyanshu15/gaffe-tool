@@ -83,7 +83,9 @@ function rebuildZonesFromUnlocked(
   grid.forEach((rowArr, r) => {
     if (r < fUnlock) return; // still locked → skip
     rowArr.forEach((cell, c) => {
-      if (cell.type === "PURPLE") {
+      // A spent purple (its zone already finished all 3 absorptions) must never
+      // form a zone again — skip it so upgrades don't revive exhausted coins.
+      if (cell.type === "PURPLE" && !cell.spent) {
         zones = addZoneForAnchor(zones, r, c, rows, cols, nextId);
       }
     });
@@ -101,11 +103,14 @@ export default function CombinationFeature({
       ? seedCarriedGrid(carriedCoins, selectedFeatures)
       : seedCombinedGrid(baseCoins, selectedFeatures);
 
-  // Grid holding ONLY the base-game trigger coins — used by reset, which keeps
-  // those coins and clears everything added/carried during play.
+  // Grid that reset restores to: the state this feature STARTED from.
+  //  - Entered via an upgrade: the full carried grid (the upgrade-entry snapshot),
+  //    so the upgraded feature's carried coins/logic survive a reset — only what
+  //    was added AFTER the upgrade is cleared.
+  //  - Fresh entry: the base-game trigger coins.
   const seedBaseOnly = (): ComboCell[][] =>
     (carriedCoins && carriedCoins.length > 0)
-      ? seedCarriedGrid(carriedCoins.filter(c => c.fromBase), selectedFeatures)
+      ? seedCarriedGrid(carriedCoins, selectedFeatures)
       : seedCombinedGrid(baseCoins, selectedFeatures);
 
   // Global flat positions of the base-game trigger coins for the current seed.
@@ -253,8 +258,9 @@ export default function CombinationFeature({
       if (cell.type === "EMPTY") return;
       const pos      = gridToPos(r, c, selectedFeatures);
       const fromBase = baseCoinPositions.current.has(pos);
-      if (cell.type === "RED") out.push({ pos, type: "RED", value: cell.value, multiplier: cell.multiplier, fromBase });
-      else                     out.push({ pos, type: cell.type, value: (cell as any).value, fromBase });
+      if (cell.type === "RED")         out.push({ pos, type: "RED", value: cell.value, multiplier: cell.multiplier, fromBase });
+      else if (cell.type === "PURPLE") out.push({ pos, type: "PURPLE", value: cell.value, spent: cell.spent, fromBase });
+      else                             out.push({ pos, type: cell.type, value: (cell as any).value, fromBase });
     }));
     return out;
   };
@@ -412,11 +418,20 @@ export default function CombinationFeature({
       let absThisSpin = 0;                             // coins swallowed this spin
       if (hasZn && zones.length > 0) {
         const ng = grid.map(row => row.map(c => ({ ...c })));
-        zones.forEach(zone => zone.cells.forEach(([zr, zc]) => {
-          if (!isUnlocked(zr)) return;                 // locked rows don't absorb
-          const isAnchor = zone.anchors.some(([ar, ac]) => ar === zr && ac === zc);
-          if (!isAnchor && ng[zr][zc].type !== "EMPTY") { ng[zr][zc] = { type: "EMPTY" }; absThisSpin++; }
-        }));
+        zones.forEach(zone => {
+          zone.cells.forEach(([zr, zc]) => {
+            if (!isUnlocked(zr)) return;               // locked rows don't absorb
+            const isAnchor = zone.anchors.some(([ar, ac]) => ar === zr && ac === zc);
+            if (!isAnchor && ng[zr][zc].type !== "EMPTY") { ng[zr][zc] = { type: "EMPTY" }; absThisSpin++; }
+          });
+          // This spin consumes a charge; if it was the zone's last, retire its
+          // anchor purple(s) so they carry forward spent and never reform a zone.
+          if (zone.charges - 1 <= 0) {
+            zone.anchors.forEach(([ar, ac]) => {
+              if (ng[ar][ac].type === "PURPLE") ng[ar][ac] = { ...ng[ar][ac], spent: true };
+            });
+          }
+        });
         carriedGrid = ng;
       }
       // Carry forward all row-unlock credit that is NOT represented by a coin on
@@ -465,7 +480,15 @@ export default function CombinationFeature({
               ng[zr][zc] = { type: "EMPTY" };
             }
           });
-          return { ...zone, charges: zone.charges - 1 };
+          const next = { ...zone, charges: zone.charges - 1 };
+          // Zone just used its last charge → its anchor purple coin(s) are now
+          // spent for good. Mark them so no upgrade/reseed ever revives them.
+          if (next.charges <= 0) {
+            zone.anchors.forEach(([ar, ac]) => {
+              if (ng[ar][ac].type === "PURPLE") ng[ar][ac] = { ...ng[ar][ac], spent: true };
+            });
+          }
+          return next;
         })
         .filter(z => z.charges > 0);
       setGrid(ng);
@@ -492,8 +515,10 @@ export default function CombinationFeature({
   };
  
   const handleReset = () => {
-    // Reset clears everything added/carried during play but KEEPS the base-game
-    // coins that triggered the feature. Any locked-row structure returns to its
+    // Reset restores the state this feature STARTED from: for a combo reached via
+    // an upgrade that's the full upgrade-entry snapshot (so the upgraded feature's
+    // carried coins/logic are kept), otherwise the base-game trigger coins. Only
+    // what was added afterward is cleared. Any locked-row structure returns to its
     // initial state on its own, since `fUnlock` is derived from the grid.
     const g = seedBaseOnly();
     zoneCounter.current = 0;
@@ -526,8 +551,9 @@ export default function CombinationFeature({
   // ── Cell background ───────────────────────────────────────────────────────
   function cellBg(r: number, c: number, cell: ComboCell): string {
     if (cell.type === "PURPLE") {
-      if (!isUnlocked(r)) {
-        // Locked row: inert purple — no zone background, plain dark purple border
+      if (!isUnlocked(r) || cell.spent) {
+        // Locked row OR spent (3 absorptions done): inert purple — no zone
+        // background, plain dark purple border.
         return "bg-[#1a2035] border-purple-900";
       }
       // Unlocked anchor
@@ -580,10 +606,11 @@ export default function CombinationFeature({
     const isUpgrade = upgradeCoin?.pos === pos;
     const armable   = armedColor !== null && isEmpty && !isUpgrade;
  
-    // Zone charge badge: only for unlocked purple anchors with an active zone
-    const anchorZone  = (cell.type === "PURPLE" && unlocked)
+    // Zone charge badge: only for unlocked, non-spent purple anchors with an active zone
+    const anchorZone  = (cell.type === "PURPLE" && unlocked && !cell.spent)
       ? getZoneForAnchor(r, c, zones) : null;
     const showCharge  = anchorZone && anchorZone.charges > 0;
+    const isSpentPurple = cell.type === "PURPLE" && cell.spent;
  
     const cellH = isEmpty
       ? (isTwr ? "min-h-[34px]" : "min-h-[60px]")
@@ -709,6 +736,10 @@ export default function CombinationFeature({
             {/* "inactive" label for locked-row purple */}
             {!unlocked && (
               <span className="text-[8px] text-purple-800 italic pointer-events-none">inactive</span>
+            )}
+            {/* "spent" label — zone already used all 3 absorptions */}
+            {unlocked && isSpentPurple && (
+              <span className="text-[8px] text-purple-800 italic pointer-events-none">spent</span>
             )}
             <select
               className="text-[10px] text-white rounded px-0.5 py-0.5 w-full bg-purple-950 border border-purple-700 outline-none"

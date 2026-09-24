@@ -72,6 +72,9 @@ export type CarriedCoin = {
   type:        "GOLD" | "RED" | "BLUE" | "PURPLE";
   value:       string;
   multiplier?: string;
+  /** For PURPLE: its zone already finished all 3 absorptions, so it must remain
+   *  inert in the upgraded feature and never form a zone again. */
+  spent?:      boolean;
   /** True when this coin originated from a base-game SCaT (the coin that
    *  triggered the feature). Preserved across upgrades so a feature reset can
    *  keep the trigger coins while clearing everything added during play. */
@@ -84,7 +87,10 @@ export type ComboCell =
   | { type: "GOLD";    value: string }
   | { type: "RED";     value: string; multiplier: string }
   | { type: "BLUE";    value: string }
-  | { type: "PURPLE";  value: string };
+  // `spent` = this purple coin's zone has already completed its 3 absorptions.
+  // A spent purple stays on the grid (it has landed) but can NEVER form a zone
+  // again — not even after an upgrade rebuilds zones from the carried grid.
+  | { type: "PURPLE";  value: string; spent?: boolean };
  
 // ─── Coin value option lists (reused verbatim from each standalone feature) ──
 export const GOLD_COIN_VALUES: string[] = [
@@ -225,7 +231,7 @@ export function seedCarriedGrid(
   const g     = emptyGrid(rows, cols);
   const isTwr = hasTower(features);
 
-  carried.forEach(({ pos, type, value, multiplier }) => {
+  carried.forEach(({ pos, type, value, multiplier, spent }) => {
     const col       = Math.floor(pos / ROWS_TOTAL);
     const globalRow = pos % ROWS_TOTAL;
     const row       = isTwr ? globalRow : globalRow - ROWS_LOCKED;
@@ -237,7 +243,7 @@ export function seedCarriedGrid(
     } else if (type === "BLUE") {
       g[row][col] = { type: "BLUE", value };
     } else if (type === "PURPLE") {
-      g[row][col] = { type: "PURPLE", value };
+      g[row][col] = { type: "PURPLE", value, spent };
     } else {
       g[row][col] = { type: "GOLD", value };
     }
