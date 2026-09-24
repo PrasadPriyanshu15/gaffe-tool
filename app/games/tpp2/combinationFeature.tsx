@@ -402,7 +402,7 @@ export default function CombinationFeature({
       if (cell.type === "PURPLE") newPurpleCount++;
     }));
  
-    onSpin(generateComboGaffe(grid, selectedFeatures, prevSnap, eReelPos, redCoinIdx, blueCoinIdx, purpleCoinIdx, upgradeCoin));
+    onSpin(generateComboGaffe(grid, selectedFeatures, prevSnap, eReelPos, redCoinIdx, blueCoinIdx, purpleCoinIdx, upgradeCoin, fUnlock));
 
     // An upgrade coin landed this spin → carry the full grid forward and switch
     // to the upgraded combination view (the upgrade coin itself vanishes).

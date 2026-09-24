@@ -492,9 +492,17 @@ export function generateComboGaffe(
   blueCoinIdx:   number,
   purpleCoinIdx: number,
   upgradeCoin:   UpgradeCoin | null = null,
+  fUnlock:       number = ROWS_LOCKED,
 ): string {
   const parts: string[] = [];
   const isTwr = hasTower(features);
+
+  // Locked-for-reporting test. Must use the LIVE unlock boundary (`fUnlock`),
+  // NOT the static isPosLocked() row-8 threshold — with Tower the top rows
+  // unlock progressively, so a red/purple coin landing in a row that already
+  // unlocked on a previous spin is unlocked and belongs on the unlocked lines.
+  // Without Tower fUnlock is 0, so nothing is ever locked (as before).
+  const posLocked = (pos: number): boolean => (pos % ROWS_TOTAL) < fUnlock;
  
   // 1 ── typeEReelPosition ────────────────────────────────────────────────────
   if (eReelPos) {
@@ -517,7 +525,7 @@ export function generateComboGaffe(
   grid.forEach((rowArr, r) => rowArr.forEach((cell, c) => {
     const pos = gridToPos(r, c, features);
     if (prevSnap.has(pos)) return;
-    if (isPosLocked(pos)) return;                 // this line is unlocked-only
+    if (posLocked(pos)) return;                   // this line is unlocked-only
     if (cell.type === "BLUE")   newBluePos   = pos;
     if (cell.type === "PURPLE") newPurplePos = pos;
     if (cell.type === "RED")    newRedPos    = pos;
@@ -538,7 +546,7 @@ export function generateComboGaffe(
   const lockedBlue: string[] = [];
   grid.forEach((rowArr, r) => rowArr.forEach((cell, c) => {
     const pos = gridToPos(r, c, features);
-    if (!isPosLocked(pos)) return;
+    if (!posLocked(pos)) return;
     if (prevSnap.has(pos)) return;          // skip coins carried from prior spins
     const globalRow = pos % ROWS_TOTAL;
     if (cell.type === "BLUE") lockedBlue.push(`[${globalRow},${pos}]`);
@@ -568,7 +576,7 @@ export function generateComboGaffe(
     if (cell.type === "EMPTY") return;
     const pos = gridToPos(r, c, features);
     if (prevSnap.has(pos)) return;                          // not new this spin
-    const unlockedNew = !isPosLocked(pos);
+    const unlockedNew = !posLocked(pos);
  
     if (cell.type === "GOLD") {
       parts.push(`reelstripCOR_${pos}:[${cell.value}]`);
