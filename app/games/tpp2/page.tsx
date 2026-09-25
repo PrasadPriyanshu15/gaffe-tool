@@ -176,6 +176,23 @@ export default function Page() {
   const addSpinLine = (line: string) => setFeatureGaffes(prev => [...prev, line]);
   const clearLines  = () => setFeatureGaffes([]);
 
+  /**
+   * Reset invoked from inside a feature. If the current feature was reached via
+   * one or more upgrades (its active section has more features than the base game
+   * launched), reset returns all the way back to that original feature, re-seeded
+   * from the current base-game state. This clears the carried coins AND the
+   * upgrade-added feature(s), so their upgrade-symbol option becomes available
+   * again. For a feature entered directly from the base game, just clear the log.
+   */
+  const handleFeatureReset = () => {
+    const original = selectedFeatures.join("-");
+    if (selectedFeatures.length > 0 && activeSection !== original) {
+      handleGoTo(selectedFeatures);   // re-enter the original feature (also clears lines)
+    } else {
+      clearLines();
+    }
+  };
+
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen text-white p-6" style={{ background: "#0d1117" }}>
@@ -246,7 +263,7 @@ export default function Page() {
               carriedCoins={carriedCoins}
               carriedUnlockBonus={carriedUnlockBonus}
               onSpin={addSpinLine}
-              onReset={clearLines}
+              onReset={handleFeatureReset}
               onUpgrade={(feature, carried, bonus) => handleUpgrade(activeKeys, feature, carried, bonus)}
             />
           )}

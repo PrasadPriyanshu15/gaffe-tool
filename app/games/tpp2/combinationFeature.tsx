@@ -103,14 +103,14 @@ export default function CombinationFeature({
       ? seedCarriedGrid(carriedCoins, selectedFeatures)
       : seedCombinedGrid(baseCoins, selectedFeatures);
 
-  // Grid that reset restores to: the state this feature STARTED from.
-  //  - Entered via an upgrade: the full carried grid (the upgrade-entry snapshot),
-  //    so the upgraded feature's carried coins/logic survive a reset — only what
-  //    was added AFTER the upgrade is cleared.
-  //  - Fresh entry: the base-game trigger coins.
+  // Grid holding ONLY the base-game trigger coins — used by reset, which keeps
+  // those coins and clears everything added/carried during play. When the combo
+  // was reached via an upgrade, reset additionally reverts the whole upgrade at
+  // the page level (see `onReset`), returning to the feature the base game
+  // originally launched so its upgrade-symbol option becomes available again.
   const seedBaseOnly = (): ComboCell[][] =>
     (carriedCoins && carriedCoins.length > 0)
-      ? seedCarriedGrid(carriedCoins, selectedFeatures)
+      ? seedCarriedGrid(carriedCoins.filter(c => c.fromBase), selectedFeatures)
       : seedCombinedGrid(baseCoins, selectedFeatures);
 
   // Global flat positions of the base-game trigger coins for the current seed.
@@ -515,11 +515,11 @@ export default function CombinationFeature({
   };
  
   const handleReset = () => {
-    // Reset restores the state this feature STARTED from: for a combo reached via
-    // an upgrade that's the full upgrade-entry snapshot (so the upgraded feature's
-    // carried coins/logic are kept), otherwise the base-game trigger coins. Only
-    // what was added afterward is cleared. Any locked-row structure returns to its
-    // initial state on its own, since `fUnlock` is derived from the grid.
+    // Reset clears everything added/carried during play back to the base-game
+    // trigger coins. When this combo was reached via an upgrade, `onReset` also
+    // reverts the upgrade at the page level (back to the original base-game
+    // feature) so the upgrade-symbol option returns. Any locked-row structure
+    // returns to its initial state on its own, since `fUnlock` is grid-derived.
     const g = seedBaseOnly();
     zoneCounter.current = 0;
     const fu = hasZone(selectedFeatures)
