@@ -90,7 +90,20 @@ function rebuildZonesFromUnlocked(
       }
     });
   });
-  return zones;
+  // Resume any zone whose anchor purple(s) carried REMAINING charges across a
+  // feature upgrade: instead of the full MAX_SPINS that addZoneForAnchor sets,
+  // start at the smallest remaining charge among the zone's anchors. Anchors
+  // with no carried charge (freshly placed / from base) leave the zone at full.
+  return zones.map(z => {
+    let carried: number | undefined;
+    z.anchors.forEach(([ar, ac]) => {
+      const cell = grid[ar]?.[ac];
+      if (cell?.type === "PURPLE" && typeof cell.charges === "number") {
+        carried = carried === undefined ? cell.charges : Math.min(carried, cell.charges);
+      }
+    });
+    return carried !== undefined ? { ...z, charges: carried } : z;
+  });
 }
  
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -183,6 +196,12 @@ export default function CombinationFeature({
     const seedZones = hasZone(selectedFeatures)
       ? rebuildZonesFromUnlocked(g, fu, gridRows(selectedFeatures), COLS, nextId)
       : [];
+    // The carried remaining charges have now been consumed into `seedZones`;
+    // drop the transient hint from the grid so a later row-unlock rebuild starts
+    // fresh (at MAX_SPINS) rather than reusing this stale, pre-play count.
+    g.forEach(row => row.forEach(cell => {
+      if (cell.type === "PURPLE" && cell.charges !== undefined) cell.charges = undefined;
+    }));
     setGrid(g);
     setZones(seedZones);
     baseCoinPositions.current = computeBasePositions(g);
@@ -259,7 +278,7 @@ export default function CombinationFeature({
       const pos      = gridToPos(r, c, selectedFeatures);
       const fromBase = baseCoinPositions.current.has(pos);
       if (cell.type === "RED")         out.push({ pos, type: "RED", value: cell.value, multiplier: cell.multiplier, fromBase });
-      else if (cell.type === "PURPLE") out.push({ pos, type: "PURPLE", value: cell.value, spent: cell.spent, fromBase });
+      else if (cell.type === "PURPLE") out.push({ pos, type: "PURPLE", value: cell.value, spent: cell.spent, charges: cell.charges, fromBase });
       else                             out.push({ pos, type: cell.type, value: (cell as any).value, fromBase });
     }));
     return out;
@@ -424,13 +443,17 @@ export default function CombinationFeature({
             const isAnchor = zone.anchors.some(([ar, ac]) => ar === zr && ac === zc);
             if (!isAnchor && ng[zr][zc].type !== "EMPTY") { ng[zr][zc] = { type: "EMPTY" }; absThisSpin++; }
           });
-          // This spin consumes a charge; if it was the zone's last, retire its
-          // anchor purple(s) so they carry forward spent and never reform a zone.
-          if (zone.charges - 1 <= 0) {
-            zone.anchors.forEach(([ar, ac]) => {
-              if (ng[ar][ac].type === "PURPLE") ng[ar][ac] = { ...ng[ar][ac], spent: true };
-            });
-          }
+          // This spin consumes a charge. Carry the REMAINING charges onto the
+          // anchor purple(s) so the rebuilt zone in the upgraded feature resumes
+          // at that count instead of resetting to full. If it was the zone's
+          // last charge, retire the anchor(s) as spent so they never reform.
+          const remaining = zone.charges - 1;
+          zone.anchors.forEach(([ar, ac]) => {
+            if (ng[ar][ac].type !== "PURPLE") return;
+            ng[ar][ac] = remaining <= 0
+              ? { ...ng[ar][ac], spent: true }
+              : { ...ng[ar][ac], charges: remaining };
+          });
         });
         carriedGrid = ng;
       }
@@ -525,10 +548,14 @@ export default function CombinationFeature({
     const fu = hasZone(selectedFeatures)
       ? (hasTower(selectedFeatures) ? computeUnlockState(g).fUnlocked : 0)
       : 0;
-    setGrid(g);
-    setZones(hasZone(selectedFeatures)
+    const resetZones = hasZone(selectedFeatures)
       ? rebuildZonesFromUnlocked(g, fu, gridRows(selectedFeatures), COLS, nextId)
-      : []);
+      : [];
+    g.forEach(row => row.forEach(cell => {
+      if (cell.type === "PURPLE" && cell.charges !== undefined) cell.charges = undefined;
+    }));
+    setGrid(g);
+    setZones(resetZones);
     baseCoinPositions.current = computeBasePositions(g);
     setSpinsLeft(MAX_SPINS);
     setUsedMults(collectUsedMults(g));

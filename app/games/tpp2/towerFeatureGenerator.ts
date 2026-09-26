@@ -236,9 +236,15 @@ export function generateTowerGaffe(
     if (prevSnap.has(posIdx(r, c))) return; // skip coins carried from prior spins
     blueEntries.push(`[${r},${posIdx(r, c)}]`);
   }));
-  if (blueEntries.length > 0) {
-    parts.push(`lockedBlueCoinsReelPosition:[${blueEntries.join(",")}]`);
-  }
+  // Always emitted so the field is present even on spins with no blue coin
+  // (e.g. upgrade symbol landing alone, or a gold-only spin). When no new blue
+  // landed in a locked row this spin, a single [-1,-1] placeholder pair is
+  // reported in the [row,pos] slot.
+  parts.push(
+    blueEntries.length > 0
+      ? `lockedBlueCoinsReelPosition:[${blueEntries.join(",")}]`
+      : `lockedBlueCoinsReelPosition:[[-1,-1]]`
+  );
  
   // 4 ── reelStops: ALL 60 positions, skip prevSnap, 0=new coin, 1=empty ────
   const newlyFilled = new Set<number>();

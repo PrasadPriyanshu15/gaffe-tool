@@ -120,23 +120,21 @@ export function generateWheelGaffe(
   }
 
   // 2 ── Find NEW colored-coin positions ──────────────────────────────────────
-  let redPos:    number | null = null;
-  let bluePos:   number | null = null;
-  let purplePos: number | null = null;
+  let redPos: number | null = null;
 
   grid.forEach((rowArr, r) => rowArr.forEach((cell, c) => {
     const pos = gridToPos(r, c);
     if (prevSnap.has(pos)) return;
-    if (cell.type === "RED")    redPos    = pos;
-    if (cell.type === "BLUE")   bluePos   = pos;
-    if (cell.type === "PURPLE") purplePos = pos;
+    if (cell.type === "RED") redPos = pos;
   }));
 
-  if (redPos !== null || bluePos !== null || purplePos !== null) {
-    const b = bluePos   !== null ? String(bluePos)   : "";
-    const p = purplePos !== null ? String(purplePos) : "";
-    const r = redPos    !== null ? String(redPos)    : "";
-    parts.push(`unlockedColorCoinsReelPosition:[${b},${p},${r}]`);
+  // Always emitted so the field is present even on spins with no colored coin
+  // (e.g. upgrade symbol landing alone, or a gold-only spin). Slot order
+  // [blue, purple, red]: Wheel only ever has red, so the blue and purple slots
+  // stay blank; a red that did NOT land this spin is -1.
+  {
+    const r = redPos !== null ? String(redPos) : "-1";
+    parts.push(`unlockedColorCoinsReelPosition:[,,${r}]`);
   }
 
   // 3 ── reelstripCOR_{pos} for each NEW coin + multiplierLadderPrize ─────────

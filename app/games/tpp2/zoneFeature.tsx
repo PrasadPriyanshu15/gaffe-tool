@@ -196,10 +196,25 @@ export default function ZoneFeature({ baseCoins, onSpin, onReset, onUpgrade }: P
     // Run zone absorption FIRST so coins swallowed this spin don't carry over.
     if (upgradeCoin && onUpgrade) {
       const { grid: absorbedGrid } = processZoneOnSpin(grid, zones);
+      // Record each anchor purple's REMAINING charges after this spin's
+      // absorption so the upgraded feature resumes the zone at that count. A
+      // zone that just used its LAST charge (remaining ≤ 0) carries its anchor as
+      // `spent` so it stays inactive and never reforms a fresh 3-charge zone.
+      const remainingByPos = new Map<number, number>();
+      zones.forEach(zone => {
+        const remaining = zone.charges - 1;
+        zone.anchors.forEach(([ar, ac]) => remainingByPos.set(gridToPos(ar, ac), remaining));
+      });
+      const carried = buildCarried(absorbedGrid).map(coin => {
+        if (coin.type !== "PURPLE") return coin;
+        const remaining = remainingByPos.get(coin.pos);
+        if (remaining === undefined) return coin;
+        return remaining <= 0 ? { ...coin, spent: true } : { ...coin, charges: remaining };
+      });
       // The upgrade coin sits in an always-unlocked row, so it carries +1 toward
       // tower row-unlock progress if the target combination includes Tower
       // (ignored otherwise, since only Tower tracks unlock).
-      onUpgrade(UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color], buildCarried(absorbedGrid), 1);
+      onUpgrade(UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color], carried, 1);
       return;
     }
  

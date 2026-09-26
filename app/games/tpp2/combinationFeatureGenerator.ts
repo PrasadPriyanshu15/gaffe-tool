@@ -75,6 +75,9 @@ export type CarriedCoin = {
   /** For PURPLE: its zone already finished all 3 absorptions, so it must remain
    *  inert in the upgraded feature and never form a zone again. */
   spent?:      boolean;
+  /** For PURPLE: the zone's REMAINING charges, carried across a feature upgrade
+   *  so the rebuilt zone resumes where it left off instead of resetting to full. */
+  charges?:    number;
   /** True when this coin originated from a base-game SCaT (the coin that
    *  triggered the feature). Preserved across upgrades so a feature reset can
    *  keep the trigger coins while clearing everything added during play. */
@@ -90,7 +93,9 @@ export type ComboCell =
   // `spent` = this purple coin's zone has already completed its 3 absorptions.
   // A spent purple stays on the grid (it has landed) but can NEVER form a zone
   // again — not even after an upgrade rebuilds zones from the carried grid.
-  | { type: "PURPLE";  value: string; spent?: boolean };
+  // `charges` = REMAINING zone charges, only set transiently on a purple that is
+  // carried across a feature upgrade so its rebuilt zone resumes at that count.
+  | { type: "PURPLE";  value: string; spent?: boolean; charges?: number };
  
 // ─── Coin value option lists (reused verbatim from each standalone feature) ──
 export const GOLD_COIN_VALUES: string[] = [
@@ -231,7 +236,7 @@ export function seedCarriedGrid(
   const g     = emptyGrid(rows, cols);
   const isTwr = hasTower(features);
 
-  carried.forEach(({ pos, type, value, multiplier, spent }) => {
+  carried.forEach(({ pos, type, value, multiplier, spent, charges }) => {
     const col       = Math.floor(pos / ROWS_TOTAL);
     const globalRow = pos % ROWS_TOTAL;
     const row       = isTwr ? globalRow : globalRow - ROWS_LOCKED;
@@ -243,7 +248,7 @@ export function seedCarriedGrid(
     } else if (type === "BLUE") {
       g[row][col] = { type: "BLUE", value };
     } else if (type === "PURPLE") {
-      g[row][col] = { type: "PURPLE", value, spent };
+      g[row][col] = { type: "PURPLE", value, spent, charges };
     } else {
       g[row][col] = { type: "GOLD", value };
     }
@@ -453,10 +458,12 @@ export function computeUnlockState(grid: ComboCell[][], bonusUnlockedCoins = 0):
  *
  * 1. typeEReelPosition:[pos,value] — same as every standalone feature.
  *
- * 2. unlockedColorCoinsReelPosition:[blue,purple,red] — only the NEW colored
- *    coin(s) that landed in an UNLOCKED position (rows 8-11) this spin.
- *    Blue effectively never appears here since blue can only land in locked
- *    rows, but the slot is kept for format consistency / future combos.
+ * 2. unlockedColorCoinsReelPosition:[blue,purple,red] — the NEW colored
+ *    coin(s) that landed in an UNLOCKED position (rows 8-11) this spin. Always
+ *    emitted (even for an upgrade-symbol-alone or gold-only spin): a purple/red
+ *    that did NOT land this spin is reported as -1. Blue effectively never
+ *    appears here since blue can only land in locked rows, so its slot stays
+ *    empty and is kept for format consistency / future combos.
  *
  * 3. lockedBlueCoinsReelPosition:[[row,pos],...] — ALL blue coins currently in
  *    the LOCKED section (rows 0-7), accumulated across spins (Tower's format).
@@ -464,8 +471,10 @@ export function computeUnlockState(grid: ComboCell[][], bonusUnlockedCoins = 0):
  *    NEW-this-spin ones are reported together via:
  *      lockedPurpleRedCoinsSymbol:[purpleSeq,redSeq]        (2 slots, no blue)
  *      lockedPurpleRedCoinsReelPosition:[purplePos,redPos]  (2 slots)
- *    with an empty slot for whichever color didn't land this spin, and only
- *    ever the current spin's positions (never previous spins').
+ *    The Symbol line appears only when a locked red/purple landed this spin
+ *    (empty slot for the color that didn't). The ReelPosition line is emitted
+ *    on every spin that has locked rows, with -1 in a slot whose color didn't
+ *    land — only ever the current spin's positions (never previous spins').
  *
  * 4. reelstripCOR_{pos}:... for every NEW coin this spin — same shape as the
  *    single features:
@@ -537,10 +546,14 @@ export function generateComboGaffe(
     if (cell.type === "RED")    newRedPos    = pos;
   }));
  
-  if (newBluePos !== null || newPurplePos !== null || newRedPos !== null) {
+  // Always emitted so the field is present even on spins with no unlocked
+  // colored coin (e.g. upgrade symbol landing alone, or a gold-only spin).
+  // Slot order [blue, purple, red]: blue can never land in an unlocked row so
+  // its slot stays empty; a purple/red that did NOT land this spin is -1.
+  {
     const b = newBluePos   !== null ? String(newBluePos)   : "";
-    const p = newPurplePos !== null ? String(newPurplePos) : "";
-    const r = newRedPos    !== null ? String(newRedPos)    : "";
+    const p = newPurplePos !== null ? String(newPurplePos) : "-1";
+    const r = newRedPos    !== null ? String(newRedPos)    : "-1";
     parts.push(`unlockedColorCoinsReelPosition:[${b},${p},${r}]`);
   }
  
@@ -557,7 +570,14 @@ export function generateComboGaffe(
     const globalRow = pos % ROWS_TOTAL;
     if (cell.type === "BLUE") lockedBlue.push(`[${globalRow},${pos}]`);
   }));
-  if (lockedBlue.length > 0) parts.push(`lockedBlueCoinsReelPosition:[${lockedBlue.join(",")}]`);
+  // Emitted on every spin that has locked rows (Tower active, rows still
+  // locked), so an upgrade-symbol-alone / gold-only spin still carries the
+  // field. A single [-1,-1] placeholder pair means no new blue landed this spin.
+  if (isTwr && fUnlock > 0) {
+    parts.push(lockedBlue.length > 0
+      ? `lockedBlueCoinsReelPosition:[${lockedBlue.join(",")}]`
+      : `lockedBlueCoinsReelPosition:[[-1,-1]]`);
+  }
  
   // 4 ── reelstripCOR for every NEW coin this spin + multiplierLadderPrize ───
   // GOLD keeps the array form [value]. BLUE / RED / PURPLE are all plain values
@@ -619,12 +639,18 @@ export function generateComboGaffe(
   // NEW-this-spin red/purple that landed in a LOCKED row, reported together.
   // Slot order [purple, red] (2 elements, no blue); empty slot if that color
   // didn't land this spin. Only this spin's coins — never accumulated.
+  // Symbol line: only when a locked red/purple actually landed this spin.
   if (lockedNewRedSym !== undefined || lockedNewPurpleSym !== undefined) {
     const pSym = lockedNewPurpleSym ?? "";
     const rSym = lockedNewRedSym    ?? "";
-    const pPos = lockedNewPurplePos !== undefined ? String(lockedNewPurplePos) : "";
-    const rPos = lockedNewRedPos    !== undefined ? String(lockedNewRedPos)    : "";
     parts.push(`lockedPurpleRedCoinsSymbol:[${pSym},${rSym}]`);
+  }
+  // Position line: always emitted whenever locked rows exist, so an upgrade-
+  // symbol-alone / gold-only spin still carries the field. Slot order
+  // [purple, red]; a color that did NOT land in a locked row this spin is -1.
+  if (isTwr && fUnlock > 0) {
+    const pPos = lockedNewPurplePos !== undefined ? String(lockedNewPurplePos) : "-1";
+    const rPos = lockedNewRedPos    !== undefined ? String(lockedNewRedPos)    : "-1";
     parts.push(`lockedPurpleRedCoinsReelPosition:[${pPos},${rPos}]`);
   }
 

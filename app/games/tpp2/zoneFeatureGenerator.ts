@@ -229,8 +229,13 @@ export function generateZoneGaffe(
     if (cell.type === "PURPLE") purplePos = pos;
   }));
 
-  if (purplePos !== null) {
-    parts.push(`unlockedColorCoinsReelPosition:[,${purplePos},]`);
+  // Always emitted so the field is present even on spins with no colored coin
+  // (e.g. upgrade symbol landing alone, or a gold-only spin). Slot order
+  // [blue, purple, red]: Zone only ever has purple, so the blue and red slots
+  // stay blank; a purple that did NOT land this spin is -1.
+  {
+    const p = purplePos !== null ? String(purplePos) : "-1";
+    parts.push(`unlockedColorCoinsReelPosition:[,${p},]`);
   }
  
   // 3 ── reelstripCOR_{pos} for each NEW coin ─────────────────────────────────
