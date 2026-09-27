@@ -16,7 +16,7 @@ import {
   gridToPos, posToCol, eReelOptions, UNLOCKED_POSITIONS,
 } from "./wheelFeatureGenerator";
 import {
-  FeatureKey, CarriedCoin, UpgradeCoin, UpgradeColor,
+  FeatureKey, CarriedCoin, CarriedCoinIdx, UpgradeCoin, UpgradeColor,
   availableUpgradeTargets, UPGRADE_COLOR_TO_FEATURE,
 } from "./combinationFeatureGenerator";
 import UpgradePanel, { UP_COLOR_META } from "./UpgradePanel";
@@ -26,7 +26,7 @@ type Props = {
   baseCoins:               { position: number; value: string }[];
   onSpin:                  (line: string) => void;
   onReset:                 () => void;
-  onUpgrade?:              (feature: FeatureKey, carried: CarriedCoin[], bonusUnlock: number) => void;
+  onUpgrade?:              (feature: FeatureKey, carried: CarriedCoin[], bonusUnlock: number, coinIdx: CarriedCoinIdx) => void;
   sharedSpentMultipliers?: string[];
   onMultiplierSpent?:      (val: string) => void;
 };
@@ -198,8 +198,15 @@ export default function WheelFeature({
     if (upgradeCoin && onUpgrade) {
       // The upgrade coin sits in an always-unlocked row, so it carries +1 toward
       // tower row-unlock progress if the target combination includes Tower
-      // (ignored otherwise, since only Tower tracks unlock).
-      onUpgrade(UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color], buildCarried(grid), 1);
+      // (ignored otherwise, since only Tower tracks unlock). Forward the RED
+      // sequence index INCLUDING this spin's new red coin(s) so the upgraded
+      // feature resumes the sequence instead of restarting at index 0.
+      onUpgrade(
+        UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color],
+        buildCarried(grid),
+        1,
+        { red: redCoinIdx + newRedCount, blue: 0, purple: 0 },
+      );
       return;
     }
 

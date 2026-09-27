@@ -21,12 +21,12 @@ import {
   unlockHint, computeUnlockState,
   gridToPos, posToCol, eReelOptions, ALL_POSITIONS, UNLOCKED_POSITIONS,
   generateComboGaffe,
-  UpgradeCoin, UpgradeColor, CarriedCoin,
+  UpgradeCoin, UpgradeColor, CarriedCoin, CarriedCoinIdx,
   seedCarriedGrid, availableUpgradeTargets,
   UPGRADE_COLOR_TO_FEATURE,
 } from "./combinationFeatureGenerator";
 import UpgradePanel, { UP_COLOR_META } from "./UpgradePanel";
- 
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 type Props = {
   selectedFeatures: FeatureKey[];
@@ -35,9 +35,13 @@ type Props = {
   /** Row-unlock credit carried in from the upgrade that opened this combination
    *  (landed-but-vanished coins, e.g. the upgrade coin itself). */
   carriedUnlockBonus?: number;
+  /** Next RED/BLUE/PURPLE sequence index carried in from the upgrade that opened
+   *  this combination, so a color already partway through its value sequence
+   *  resumes instead of restarting at index 0. */
+  carriedCoinIdx?: CarriedCoinIdx;
   onSpin:    (line: string) => void;
   onReset:   () => void;
-  onUpgrade?: (feature: FeatureKey, carried: CarriedCoin[], bonusUnlock: number) => void;
+  onUpgrade?: (feature: FeatureKey, carried: CarriedCoin[], bonusUnlock: number, coinIdx: CarriedCoinIdx) => void;
 };
  
 // ─── Display metadata ─────────────────────────────────────────────────────────
@@ -108,7 +112,7 @@ function rebuildZonesFromUnlocked(
  
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function CombinationFeature({
-  selectedFeatures, baseCoins, carriedCoins, carriedUnlockBonus, onSpin, onReset, onUpgrade,
+  selectedFeatures, baseCoins, carriedCoins, carriedUnlockBonus, carriedCoinIdx, onSpin, onReset, onUpgrade,
 }: Props) {
   // Initial grid: from carried coins when arriving via an upgrade, else from base coins.
   const seedGrid = (): ComboCell[][] =>
@@ -155,9 +159,9 @@ export default function CombinationFeature({
   const [spinsLeft,     setSpinsLeft]     = useState(MAX_SPINS);
   const [usedMults,     setUsedMults]     = useState<Set<string>>(new Set());
   const [eReelPos,      setEReelPos]      = useState<EReelSetting | null>(null);
-  const [redCoinIdx,    setRedCoinIdx]    = useState(0);
-  const [blueCoinIdx,   setBlueCoinIdx]   = useState(0);
-  const [purpleCoinIdx, setPurpleCoinIdx] = useState(0);
+  const [redCoinIdx,    setRedCoinIdx]    = useState(() => carriedCoinIdx?.red    ?? 0);
+  const [blueCoinIdx,   setBlueCoinIdx]   = useState(() => carriedCoinIdx?.blue   ?? 0);
+  const [purpleCoinIdx, setPurpleCoinIdx] = useState(() => carriedCoinIdx?.purple ?? 0);
   // Coins that have LANDED but were later swallowed by a zone. A coin that has
   // landed must keep counting toward its max — absorption removes it from the
   // grid but must NOT free up a slot — so we tally absorbed colored coins here
@@ -210,9 +214,12 @@ export default function CombinationFeature({
     setEReelPos(null);
     setUpgradeCoin(null);
     setArmedColor(null);
-    setRedCoinIdx(0);
-    setBlueCoinIdx(0);
-    setPurpleCoinIdx(0);
+    // Seed each color's sequence index from the upgrade that carried it in
+    // (defaulting to 0 for a fresh, non-upgrade entry) so a color already
+    // partway through its value sequence resumes instead of restarting.
+    setRedCoinIdx(carriedCoinIdx?.red ?? 0);
+    setBlueCoinIdx(carriedCoinIdx?.blue ?? 0);
+    setPurpleCoinIdx(carriedCoinIdx?.purple ?? 0);
     // Seed row-unlock credit carried in from the upgrade (the landed-but-vanished
     // upgrade coin, plus any credit accumulated in prior features) so a row that
     // unlocked right before the upgrade stays unlocked here.
@@ -224,7 +231,7 @@ export default function CombinationFeature({
       if (cell.type !== "EMPTY") snap.add(gridToPos(r, c, selectedFeatures));
     }));
     lastSnapshot.current = snap;
-  }, [JSON.stringify(baseCoins), JSON.stringify(carriedCoins), JSON.stringify(selectedFeatures)]);
+  }, [JSON.stringify(baseCoins), JSON.stringify(carriedCoins), JSON.stringify(selectedFeatures), JSON.stringify(carriedCoinIdx)]);
  
   // ── Derived: unlock state (fixed-point, matches standalone Tower) ─────────
   // A red/purple UPGRADE coin sitting in an unlocked row has landed, so it
@@ -464,7 +471,14 @@ export default function CombinationFeature({
       // position is always-unlocked, so the upgrade coin always counts.
       const upgradeCredit = isTwr ? (upgradeInUnlockedRow ? 1 : 0) : 1;
       const forwardBonus  = absorbed.unlock + absThisSpin + upgradeCredit;
-      onUpgrade(UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color], buildCarried(carriedGrid), forwardBonus);
+      // Forward each color's sequence index INCLUDING this spin's new coin(s)
+      // so the upgraded feature resumes the sequence instead of restarting.
+      const forwardCoinIdx: CarriedCoinIdx = {
+        red:    redCoinIdx    + newRedCount,
+        blue:   blueCoinIdx   + newBlueCount,
+        purple: purpleCoinIdx + newPurpleCount,
+      };
+      onUpgrade(UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color], buildCarried(carriedGrid), forwardBonus, forwardCoinIdx);
       return;
     }
  

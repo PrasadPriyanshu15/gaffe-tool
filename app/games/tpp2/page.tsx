@@ -18,7 +18,7 @@ import {
   BaseCoin,
 } from "./gaffeGenerator";
 import { ScatType }          from "./ReelColumn";
-import { FeatureKey, CarriedCoin } from "./combinationFeatureGenerator";
+import { FeatureKey, CarriedCoin, CarriedCoinIdx } from "./combinationFeatureGenerator";
 
 // ─── Feature display metadata ─────────────────────────────────────────────────
 const F_COLOR: Record<string, string> = {
@@ -79,6 +79,10 @@ export default function Page() {
   // ── Row-unlock credit carried forward with an upgrade (landed-but-vanished
   //    coins such as the upgrade coin itself) ────────────────────────────────
   const [carriedUnlockBonus, setCarriedUnlockBonus] = useState<number>(0);
+  // ── Next RED/BLUE/PURPLE sequence index carried forward with an upgrade, so
+  //    a color already partway through its value sequence resumes instead of
+  //    restarting at index 0 in the upgraded feature ──────────────────────────
+  const [carriedCoinIdx,  setCarriedCoinIdx]  = useState<CarriedCoinIdx | undefined>(undefined);
 
   // ── Live base gaffe ───────────────────────────────────────────────────────
   const gaffe = useMemo(
@@ -105,6 +109,7 @@ export default function Page() {
     setFeatureGaffes([]);
     setCarriedCoins(undefined);   // fresh entry — not an upgrade
     setCarriedUnlockBonus(0);
+    setCarriedCoinIdx(undefined);
 
     if (features.length === 1) {
       // Single feature
@@ -132,6 +137,7 @@ export default function Page() {
     setComboBaseCoins([]);
     setCarriedCoins(undefined);
     setCarriedUnlockBonus(0);
+    setCarriedCoinIdx(undefined);
   };
 
   /**
@@ -163,11 +169,13 @@ export default function Page() {
     fromFeatures: string[],
     newFeature:   FeatureKey,
     carried:      CarriedCoin[],
-    bonusUnlock:  number
+    bonusUnlock:  number,
+    coinIdx:      CarriedCoinIdx
   ) => {
     if (fromFeatures.includes(newFeature)) return;
     setCarriedCoins(carried);
     setCarriedUnlockBonus(bonusUnlock);
+    setCarriedCoinIdx(coinIdx);
     setSingleBaseCoins([]);
     setComboBaseCoins([]);
     setActiveSection([...fromFeatures, newFeature].join("-"));
@@ -262,9 +270,10 @@ export default function Page() {
               baseCoins={comboBaseCoins}
               carriedCoins={carriedCoins}
               carriedUnlockBonus={carriedUnlockBonus}
+              carriedCoinIdx={carriedCoinIdx}
               onSpin={addSpinLine}
               onReset={handleFeatureReset}
-              onUpgrade={(feature, carried, bonus) => handleUpgrade(activeKeys, feature, carried, bonus)}
+              onUpgrade={(feature, carried, bonus, coinIdx) => handleUpgrade(activeKeys, feature, carried, bonus, coinIdx)}
             />
           )}
 
@@ -274,7 +283,7 @@ export default function Page() {
               baseCoins={singleBaseCoins}
               onSpin={addSpinLine}
               onReset={clearLines}
-              onUpgrade={(feature, carried, bonus) => handleUpgrade(["piggyWheel"], feature, carried, bonus)}
+              onUpgrade={(feature, carried, bonus, coinIdx) => handleUpgrade(["piggyWheel"], feature, carried, bonus, coinIdx)}
             />
           )}
 
@@ -284,7 +293,7 @@ export default function Page() {
               baseCoins={singleBaseCoins}
               onSpin={addSpinLine}
               onReset={clearLines}
-              onUpgrade={(feature, carried, bonus) => handleUpgrade(["piggyZone"], feature, carried, bonus)}
+              onUpgrade={(feature, carried, bonus, coinIdx) => handleUpgrade(["piggyZone"], feature, carried, bonus, coinIdx)}
             />
           )}
 
@@ -294,7 +303,7 @@ export default function Page() {
               baseCoins={singleBaseCoins}
               onSpin={addSpinLine}
               onReset={clearLines}
-              onUpgrade={(feature, carried, bonus) => handleUpgrade(["piggyTower"], feature, carried, bonus)}
+              onUpgrade={(feature, carried, bonus, coinIdx) => handleUpgrade(["piggyTower"], feature, carried, bonus, coinIdx)}
             />
           )}
 

@@ -83,6 +83,15 @@ export type CarriedCoin = {
    *  keep the trigger coins while clearing everything added during play. */
   fromBase?:   boolean;
 };
+
+/**
+ * Next index into each color's coin-value sequence (RED_COIN_SEQUENCE /
+ * BLUE_COIN_SEQUENCE / PURPLE_COIN_SEQUENCE), carried forward across a feature
+ * upgrade so a color already partway through its sequence (e.g. purple already
+ * past its first, highest-value "800000" entry) resumes from where it left off
+ * instead of restarting at index 0 in the upgraded feature.
+ */
+export type CarriedCoinIdx = { red: number; blue: number; purple: number };
  
 // ─── Cell type ────────────────────────────────────────────────────────────────
 export type ComboCell =

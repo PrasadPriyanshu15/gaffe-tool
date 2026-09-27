@@ -16,16 +16,16 @@ import {
   posIdx, eReelOptions, ALL_POSITIONS, EReelSetting,
 } from "./towerFeatureGenerator";
 import {
-  FeatureKey, CarriedCoin, UpgradeCoin, UpgradeColor,
+  FeatureKey, CarriedCoin, CarriedCoinIdx, UpgradeCoin, UpgradeColor,
   availableUpgradeTargets, UPGRADE_COLOR_TO_FEATURE,
 } from "./combinationFeatureGenerator";
 import UpgradePanel, { UP_COLOR_META } from "./UpgradePanel";
- 
+
 type Props = {
   baseCoins: { position: number; value: string }[];
   onSpin:    (line: string) => void;
   onReset:   () => void;
-  onUpgrade?: (feature: FeatureKey, carried: CarriedCoin[], bonusUnlock: number) => void;
+  onUpgrade?: (feature: FeatureKey, carried: CarriedCoin[], bonusUnlock: number, coinIdx: CarriedCoinIdx) => void;
 };
  
 // Left-side labels for the 8 locked rows
@@ -204,10 +204,15 @@ export default function TowerFeature({ baseCoins, onSpin, onReset, onUpgrade }: 
     // row-unlock progress; carry that +1 credit forward so the row stays
     // unlocked in the combination (the coin is gone, its credit is not).
     if (upgradeCoin && onUpgrade) {
+      // Forward the BLUE sequence index INCLUDING this spin's new blue coin(s)
+      // (setBlueCoinIdx above has only scheduled the update, so `blueCoinIdx`
+      // here is still the pre-spin value) so the upgraded feature resumes the
+      // sequence instead of restarting at index 0.
       onUpgrade(
         UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color],
         buildCarried(grid),
         upgradeInUnlockedRow ? 1 : 0,
+        { red: 0, blue: blueCoinIdx + newBlueCount, purple: 0 },
       );
     }
   };

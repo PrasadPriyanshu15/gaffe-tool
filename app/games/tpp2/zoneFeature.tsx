@@ -18,17 +18,17 @@ import {
   gridToPos, posToCol, eReelOptions, UNLOCKED_POSITIONS,
 } from "./zoneFeatureGenerator";
 import {
-  FeatureKey, CarriedCoin, UpgradeCoin, UpgradeColor,
+  FeatureKey, CarriedCoin, CarriedCoinIdx, UpgradeCoin, UpgradeColor,
   availableUpgradeTargets, UPGRADE_COLOR_TO_FEATURE,
 } from "./combinationFeatureGenerator";
 import UpgradePanel, { UP_COLOR_META } from "./UpgradePanel";
- 
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 type Props = {
   baseCoins: { position: number; value: string }[];
   onSpin:    (line: string) => void;
   onReset:   () => void;
-  onUpgrade?: (feature: FeatureKey, carried: CarriedCoin[], bonusUnlock: number) => void;
+  onUpgrade?: (feature: FeatureKey, carried: CarriedCoin[], bonusUnlock: number, coinIdx: CarriedCoinIdx) => void;
 };
  
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -213,8 +213,15 @@ export default function ZoneFeature({ baseCoins, onSpin, onReset, onUpgrade }: P
       });
       // The upgrade coin sits in an always-unlocked row, so it carries +1 toward
       // tower row-unlock progress if the target combination includes Tower
-      // (ignored otherwise, since only Tower tracks unlock).
-      onUpgrade(UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color], carried, 1);
+      // (ignored otherwise, since only Tower tracks unlock). Forward the PURPLE
+      // sequence index INCLUDING this spin's new purple coin(s) so the upgraded
+      // feature resumes the sequence instead of restarting at index 0.
+      onUpgrade(
+        UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color],
+        carried,
+        1,
+        { red: 0, blue: 0, purple: purpleCoinIdx + newPurpleCount },
+      );
       return;
     }
  
