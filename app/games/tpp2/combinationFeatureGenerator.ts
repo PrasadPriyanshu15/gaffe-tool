@@ -130,7 +130,7 @@ export const MULTIPLIER_VALUES: string[] = [
 // ─── Coin sequences (identical to each standalone feature, one used per spin) ─
 export const RED_COIN_SEQUENCE: string[] = [
   "RED_COIN 100000", "RED_COIN 50000", "RED_COIN 1000", "RED_COIN 100",
-  "RED_COIN 50",     "RED_COIN 10",    "RED_COIN 10",   "RED_COIN 1",
+  "RED_COIN 50",     "RED_COIN 100",    "RED_COIN 10",   "RED_COIN 10",
   "RED_COIN 1",      "RED_COIN 1",     "RED_COIN 1",    "RED_COIN 1",
 ];
 export const BLUE_COIN_SEQUENCE: string[] = [
