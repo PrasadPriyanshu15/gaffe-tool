@@ -251,6 +251,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
+import { visibleCells, clampOffset } from "@/lib/reelGrid";
+
 type ScatType = {
   key: "orange" | "blue" | "cerise" | "green" | "all";
   label: string;
@@ -262,6 +264,10 @@ type Props = {
   reel: string[];
   stop: number;
   setStop: (index: number, value: number) => void;
+
+  /** Global visible row count and anchor row (0 ... rows-1) of the landed symbol. */
+  rows: number;
+  offset: number;
 
   scatColors:          { [key: string]: ScatType };
   setScatColors:       (val: any) => void;
@@ -294,6 +300,7 @@ const SPLIT_COUNT_OPTIONS  = ["1", "2", "3", "4"];
 
 export default function ReelColumn({
   reelIndex, reel, stop, setStop,
+  rows, offset,
   scatColors,   setScatColors,
   scatValues,   setScatValues,
   scatZoneSplitter,   setScatZoneSplitter,
@@ -310,10 +317,12 @@ export default function ReelColumn({
     setStop(reelIndex, n);
   };
 
-  const visible = [-1, 0, 1].map((offset) => {
-    const index = (stop + offset + reel.length) % reel.length;
-    return { symbol: reel[index], index };
-  });
+  const landingRow = clampOffset(offset, rows);
+  const visible = visibleCells(reel, stop, offset, rows).flatMap((cell) =>
+    cell.symbol === null || cell.stripIndex === null
+      ? []
+      : [{ symbol: cell.symbol, index: cell.stripIndex }]
+  );
 
   // Cleanup stale keys for this reel when scroll moves scats off screen
   const validKeys = new Set(
@@ -373,7 +382,7 @@ export default function ReelColumn({
 
           const col = reelIndex;
           const row = rowIndex;
-          const positionNumber = col * 3 + row + 1;
+          const positionNumber = col * rows + row + 1;
 
           const isBlueOrAll   = selectedScat?.key === "blue" || selectedScat?.key === "all";
           const isOrangeOrAll = selectedScat?.key === "orange" || selectedScat?.key === "all";
@@ -383,7 +392,7 @@ export default function ReelColumn({
             <div
               key={rowIndex}
               className={`w-32 flex flex-col items-center justify-center text-white border-b border-blue-700 py-2 px-1
-                ${rowIndex === 1 ? "bg-blue-500 font-bold" : "bg-blue-700"}
+                ${rowIndex === landingRow ? "bg-blue-500 font-bold" : "bg-blue-700"}
                 ${isScat && selectedScat ? colorMap[selectedScat.key] : ""}
               `}
             >

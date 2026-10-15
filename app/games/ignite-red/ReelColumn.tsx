@@ -4,29 +4,33 @@
 
 import { SCAT_OPTIONS, ScatType, COIN_VALUES, ZONE_SPLITTER_OPTIONS, BOOST_VALUES } from "./config";
 import { ScatsState } from "./gaffeGenerator";
+import { visibleCells, clampOffset } from "@/lib/reelGrid";
 
 type Props = {
   reelIndex: number;
   reel:      string[];
   stop:      number;
   setStop:   (index: number, value: number) => void;
+  /** Global visible row count. */
+  rows:      number;
+  /** Global anchor row (0 … rows-1): the row where each reel's stop is processed. */
+  offset:    number;
   scats:     ScatsState;
   setScats:  (updater: (prev: ScatsState) => ScatsState) => void;
 };
 
-export default function ReelColumn({ reelIndex, reel, stop, setStop, scats, setScats }: Props) {
+export default function ReelColumn({ reelIndex, reel, stop, setStop, rows, offset, scats, setScats }: Props) {
+
+  const len = reel.length;
+  const landingRow = clampOffset(offset, rows);
 
   const scroll = (dir: "up" | "down") => {
-    let n = stop;
-    if (dir === "up")  { n = stop - 1; if (n < 1) n = reel.length; }
-    else               { n = stop + 1; if (n > reel.length) n = 1; }
-    setStop(reelIndex, n);
+    if (len === 0) return;
+    setStop(reelIndex, dir === "up" ? (stop - 1 + len) % len : (stop + 1) % len);
   };
 
-  const visible = [-1, 0, 1].map((offset) => {
-    const index = (stop + offset + reel.length) % reel.length;
-    return { symbol: reel[index], index };
-  });
+  const visible = visibleCells(reel, stop, offset, rows)
+    .map((c) => ({ symbol: c.symbol ?? "", index: c.stripIndex ?? 0 }));
 
   // Clean stale keys for this reel when it scrolls
   const validKeys = new Set(visible.filter(v => v.symbol === "SCAT").map(v => `${reelIndex}-${v.index}`));
@@ -68,7 +72,7 @@ export default function ReelColumn({ reelIndex, reel, stop, setStop, scats, setS
             : scat.key === "red"    ? "bg-red-900"
             : scat.key === "purple" ? "bg-purple-900"
             : ""
-            : rowIndex === 1 ? "bg-gray-600" : "bg-gray-700";
+            : rowIndex === landingRow ? "bg-gray-600" : "bg-gray-700";
 
           return (
             <div key={rowIndex}

@@ -228,7 +228,6 @@ import WheelFeature          from "./wheelFeature";
 import ZoneFeature           from "./zoneFeature";
 import TowerFeature          from "./towerFeature";
 import CombinationFeature    from "./combinationFeature";
-import { reels, setReels }   from "./reels";
 import {
   generateGaffe,
   getBaseCoinsForFeature,
@@ -254,7 +253,8 @@ const F_LABEL: Record<string, string> = {
 export default function Page() {
 
   // ── Base game state ───────────────────────────────────────────────────────
-  const [reelStops,        setReelStops]        = useState<number[]>([0, 0, 0, 0, 0]);
+  // Starts empty — the grid is populated only from an uploaded reelstrip.
+  const [reelStops,        setReelStops]        = useState<number[]>([]);
   const [scatColors,       setScatColors]       = useState<{ [key: string]: ScatType }>({});
   const [scatValues,       setScatValues]       = useState<{ [key: string]: string }>({});
   const [stackSymbol,      setStackSymbol]      = useState<string | null>(null);
@@ -263,12 +263,20 @@ export default function Page() {
   const [majorEnabled,     setMajorEnabled]     = useState<boolean>(false);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
-  // Bumped when an uploaded reelstrip replaces `reels`, so the gaffe recomputes
-  // and the base grid re-renders from the new (live-binding) reels.
-  const [reelsVersion, setReelsVersion] = useState(0);
+  // ── Dynamic grid: global row count + one global anchor-row offset ──────────
+  const [rows,   setRows]   = useState<number>(4);
+  const [offset, setOffset] = useState<number>(0);
+  // Keep the offset within the current row range when rows shrinks.
+  const handleSetRows = (r: number) => {
+    setRows(r);
+    setOffset((o) => Math.max(0, Math.min(o, r - 1)));
+  };
+
+  // Reels come only from an uploaded reelstrip (none are hardcoded).
+  const [reels, setReels] = useState<string[][]>([]);
   const handleUploadReels = (next: string[][]) => {
     setReels(next);
-    setReelsVersion((v) => v + 1);
+    setReelStops(Array(next.length).fill(0));
   };
 
   // ── Navigation ────────────────────────────────────────────────────────────
@@ -284,16 +292,14 @@ export default function Page() {
 
   // ── Live base gaffe ───────────────────────────────────────────────────────
   const gaffe = useMemo(
-    () => {
-      void reelsVersion; // recompute when an uploaded reelstrip replaces `reels` (a live binding)
-      return generateGaffe(
-        reelStops, reels,
-        scatColors, scatValues,
-        selectedFeatures, featureEnabled,
-        grandEnabled, majorEnabled, stackSymbol
-      );
-    },
-    [reelStops, scatColors, scatValues, selectedFeatures, featureEnabled, grandEnabled, majorEnabled, stackSymbol, reelsVersion]
+    () => generateGaffe(
+      reelStops, reels,
+      scatColors, scatValues,
+      selectedFeatures, featureEnabled,
+      grandEnabled, majorEnabled, stackSymbol,
+      rows, offset
+    ),
+    [reelStops, reels, scatColors, scatValues, selectedFeatures, featureEnabled, grandEnabled, majorEnabled, stackSymbol, rows, offset]
   );
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -308,14 +314,14 @@ export default function Page() {
     if (features.length === 1) {
       // Single feature
       const coins = getBaseCoinsForFeature(
-        features[0], reelStops, reels, scatColors, scatValues
+        features[0], reelStops, reels, scatColors, scatValues, rows, offset
       );
       setSingleBaseCoins(coins);
       setComboBaseCoins([]);
     } else {
       // Combination — collect all relevant SCaT coins in one pass
       const coins = getBaseCoinsForCombination(
-        features, reelStops, reels, scatColors, scatValues
+        features, reelStops, reels, scatColors, scatValues, rows, offset
       );
       setComboBaseCoins(coins);
       setSingleBaseCoins([]);
@@ -380,6 +386,7 @@ export default function Page() {
 
           {/* Base Game — always visible */}
           <BaseGame
+            reels={reels}
             reelStops={reelStops}           setReelStops={setReelStops}
             scatColors={scatColors}         setScatColors={setScatColors}
             scatValues={scatValues}         setScatValues={setScatValues}
@@ -391,6 +398,8 @@ export default function Page() {
             setSelectedFeatures={setSelectedFeatures}
             onGoTo={handleGoTo}
             onUploadReels={handleUploadReels}
+            rows={rows}     setRows={handleSetRows}
+            offset={offset} setOffset={setOffset}
           />
 
           {/* ── COMBINATION (2+ features) — single unified panel ─────── */}

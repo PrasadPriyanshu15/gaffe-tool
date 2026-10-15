@@ -3,7 +3,7 @@
 import { useState } from "react";
 import BaseGame from "./base-game";
 import GaffeOutput from "@/games/triple-piggy-pays/components/GaffeOutput";
-import { reels, setReels } from "./reels";
+import { visibleCells } from "@/lib/reelGrid";
 import { generateGaffe } from "@/games/triple-piggy-pays/utils/gaffeGenerator";
 import { useRouter } from "next/navigation";
 import FeatureFinal from "./FeatureFinal"
@@ -12,7 +12,8 @@ export default function Home() {
   const router = useRouter();
 
   // 🔥 ALL STATE LIVES HERE NOW
-  const [reelStops, setReelStops] = useState([0, 0, 0, 0, 0]);
+  // Starts empty - the grid is populated only from an uploaded reelstrip.
+  const [reelStops, setReelStops] = useState<number[]>([]);
   const [scatColors, setScatColors] = useState<{ [key: string]: string }>({});
   const [stackValue, setStackValue] = useState("");
   const [triggers, setTriggers] = useState({
@@ -30,12 +31,35 @@ export default function Home() {
   ("WHEEL" | "TOWER" | "ZONE")[]
 >([]);
 
-  // Bumped when an uploaded reelstrip replaces `reels`, forcing a re-render so
-  // the inline gaffe + base grid pick up the new (live-binding) reels.
-  const [, setReelsVersion] = useState(0);
+  // ── Dynamic grid: global row count + one global anchor-row offset ──────────
+  // Defaults match the original fixed layout (4 rows, landed symbol on row 1).
+  const [rows,   setRows]   = useState<number>(4);
+  const [offset, setOffset] = useState<number>(1);
+  // Keep the offset within the current row range when rows shrinks.
+  const handleSetRows = (r: number) => {
+    setRows(r);
+    setOffset((o) => Math.max(0, Math.min(o, r - 1)));
+  };
+
+  // Reels come only from an uploaded reelstrip (none are hardcoded).
+  const [reels, setReels] = useState<string[][]>([]);
   const handleUploadReels = (next: string[][]) => {
     setReels(next);
-    setReelsVersion((v) => v + 1);
+    setReelStops(Array(next.length).fill(0));
+  };
+
+  // Reset the base game: keeps the uploaded reelstrip, returns stops, rows,
+  // offset, scat colours, stack and triggers to their initial state.
+  const handleReset = () => {
+    setReelStops(reels.length ? Array(reels.length).fill(0) : []);
+    setScatColors({});
+    setStackValue("");
+    setTriggers({ grand: false, major: false });
+    setFeatureEnabled(true);
+    setFeatureTriggers({ WHEEL: false, TOWER: false, ZONE: false });
+    setActiveFeatures([]);
+    setRows(4);
+    setOffset(1);
   };
 
   const gaffe = generateGaffe(
@@ -45,7 +69,9 @@ export default function Home() {
     scatColors,
     stackValue,
     featureEnabled,
-    featureTriggers
+    featureTriggers,
+    rows,
+    offset
   );
 
 
@@ -57,22 +83,20 @@ const getBaseScatPositions = () => {
   }[] = [];
 
   reels.forEach((reel, reelIndex) => {
-    const stop = reelStops[reelIndex];
+    const stop = reelStops[reelIndex] ?? 0;
 
-    [-1, 0, 1, 2].forEach((offset, rowIndex) => {
-      const index = (stop - 1 + offset + reel.length) % reel.length;
-
-      if (reel[index] === "SCAT") {
-        const key = `${reelIndex}-${index}`;
+    visibleCells(reel, stop - 1, offset, rows).forEach((cell) => {
+      if (cell.symbol === "SCAT" && cell.stripIndex !== null) {
+        const key = `${reelIndex}-${cell.stripIndex}`;
         const color = scatColors[key];
 
-       if (color === "red" || color === "blue" || color === "purple") {
-  positions.push({
-    row: rowIndex,
-    col: reelIndex,
-    color
-  });
-}
+        if (color === "red" || color === "blue" || color === "purple") {
+          positions.push({
+            row: cell.row,
+            col: reelIndex,
+            color
+          });
+        }
       }
     });
   });
@@ -114,6 +138,10 @@ const [featureOutput, setFeatureOutput] = useState<string[]>([]);
             setFeatureTriggers={setFeatureTriggers}
            setActiveFeatures={setActiveFeatures}
             onUploadReels={handleUploadReels}
+            onReset={handleReset}
+            reels={reels}
+            rows={rows}     setRows={handleSetRows}
+            offset={offset} setOffset={setOffset}
           />
 
           {/* FUTURE */}

@@ -3,8 +3,8 @@
 
 import { useState } from "react";
 import ReelColumn from "@/games/triple-piggy-pays/components/ReelColumn";
-import { reels } from "./reels";
 import ReelstripUploader from "@/components/ReelstripUploader";
+import { visibleCells } from "@/lib/reelGrid";
 
 type Props = {
   reelStops: number[];
@@ -32,6 +32,13 @@ type Props = {
   setActiveFeatures: (features: ("WHEEL" | "TOWER" | "ZONE")[]) => void;
 
   onUploadReels?: (reels: string[][]) => void;
+  onReset: () => void;
+
+  reels: string[][];
+  rows: number;
+  setRows: (val: number) => void;
+  offset: number;
+  setOffset: (val: number) => void;
 };
 
 export default function BaseGame({
@@ -49,6 +56,12 @@ export default function BaseGame({
   setFeatureTriggers,
   setActiveFeatures,
   onUploadReels,
+  onReset,
+  reels,
+  rows,
+  setRows,
+  offset,
+  setOffset,
 }: Props) {
 
   // 🔥 COLLAPSE STATE
@@ -57,13 +70,11 @@ export default function BaseGame({
   const visibleScatColors = new Set<string>();
 
   reels.forEach((reel, reelIndex) => {
-    const stop = reelStops[reelIndex];
+    const stop = reelStops[reelIndex] ?? 0;
 
-    [-1, 0, 1, 2].forEach((offset) => {
-      const index = (stop - 1 + offset + reel.length) % reel.length;
-
-      if (reel[index] === "SCAT") {
-        const key = `${reelIndex}-${index}`;
+    visibleCells(reel, stop - 1, offset, rows).forEach((cell) => {
+      if (cell.symbol === "SCAT" && cell.stripIndex !== null) {
+        const key = `${reelIndex}-${cell.stripIndex}`;
         const color = scatColors[key];
         if (color) visibleScatColors.add(color);
       }
@@ -84,12 +95,11 @@ export default function BaseGame({
 
 
   const hasStack = reels.some((reel, reelIndex) => {
-    const stop = reelStops[reelIndex];
+    const stop = reelStops[reelIndex] ?? 0;
 
-    return [-1, 0, 1, 2].some((offset) => {
-      const index = (stop + offset + reel.length) % reel.length;
-      return reel[index] === "STACK";
-    });
+    return visibleCells(reel, stop - 1, offset, rows).some(
+      (cell) => cell.symbol === "STACK"
+    );
   });
 
 
@@ -113,9 +123,21 @@ export default function BaseGame({
         className="flex justify-between items-center p-4 cursor-pointer"
       >
         <h2 className="text-lg font-semibold">Base Game</h2>
-        <span className="text-xl">
-          {isOpen ? "▼" : "▶"}
-        </span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onReset();
+            }}
+            title="Reset the base game to its initial position and state"
+            className="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-sm"
+          >
+            ↺ Reset
+          </button>
+          <span className="text-xl">
+            {isOpen ? "▼" : "▶"}
+          </span>
+        </div>
       </div>
 
       {/* 🔽 COLLAPSIBLE CONTENT */}
@@ -127,25 +149,62 @@ export default function BaseGame({
             <ReelstripUploader onLoaded={onUploadReels} />
           </div>
 
+          {/* GRID ROWS + OFFSET (global) */}
+          <div className="mb-4 flex items-center gap-3 flex-wrap">
+            <label className="text-sm text-gray-300">Rows</label>
+            <input
+              type="number"
+              min={1}
+              max={12}
+              value={rows}
+              onChange={(e) =>
+                setRows(Math.max(1, Math.min(12, Number(e.target.value) || 1)))
+              }
+              className="w-16 px-2 py-1 bg-gray-700 text-white rounded"
+            />
+
+            <label className="text-sm text-gray-300 ml-1">Offset</label>
+            <select
+              value={Math.max(0, Math.min(offset, rows - 1))}
+              onChange={(e) => setOffset(Number(e.target.value))}
+              className="px-2 py-1 bg-gray-700 text-white rounded"
+            >
+              {Array.from({ length: Math.max(rows, 1) }, (_, r) => (
+                <option key={r} value={r}>row {r}</option>
+              ))}
+            </select>
+            <span className="text-xs text-gray-500 italic">
+              anchor row where each reel&apos;s stop symbol lands
+            </span>
+          </div>
+
           {/* SLOT GRID */}
+          {reels.length === 0 ? (
+            <div className="text-sm text-gray-400 italic py-6 text-center border border-dashed border-gray-600 rounded-lg">
+              No reelstrip loaded. Upload a reelstrip JSON to populate the grid.
+            </div>
+          ) : (
           <div className="flex gap-4">
             {reels.map((reel, i) => (
               <ReelColumn
                 key={i}
                 reelIndex={i}
                 reel={reel}
-                stop={reelStops[i]}
+                stop={reelStops[i] ?? 0}
                 setStop={(index, value) => {
                   const updated = [...reelStops];
                   updated[index] = value;
                   setReelStops(updated);
                 }}
+                rows={rows}
+                offset={offset}
                 scatColors={scatColors}
                 setScatColors={setScatColors}
                 stackValue={stackValue}
               />
             ))}
           </div>
+          )}
 
           {/* GRAND / MAJOR + STACK */}
           <div className="mt-6 flex gap-4">

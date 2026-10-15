@@ -14,7 +14,6 @@
 // import StrikeFeature from "./features/strike/StrikeFeature";
 // import SplitFeature from "./features/split/SplitFeature";
 // import CombinationFeature from "./features/combinations/CombinationFeature";
-// import { reels } from "./reels";
 // import { generateGaffe } from "@/games/Ignite-purple/utils/gaffeGenerator";
 // import { generateExtraFeatureGaffe, UpgradeInfoSingle as UpgradeInfoExtra } from "@/games/Ignite-purple/features/extra/extraFeatureGenerator";
 // import { generateZoneFeatureGaffe, UpgradeInfoSingle as UpgradeInfoZone } from "@/games/Ignite-purple/features/zone/zoneFeatureGenerator";
@@ -405,7 +404,7 @@ import ZoneFeature from "./features/zone/ZoneFeature";
 import StrikeFeature from "./features/strike/StrikeFeature";
 import SplitFeature from "./features/split/SplitFeature";
 import CombinationFeature from "./features/combinations/CombinationFeature";
-import { reels, setReels } from "./reels";
+import { visibleCells } from "@/lib/reelGrid";
 import { generateGaffe } from "@/games/Ignite-purple/utils/gaffeGenerator";
 import { generateExtraFeatureGaffe, UpgradeInfoSingle as UpgradeInfoExtra } from "@/games/Ignite-purple/features/extra/extraFeatureGenerator";
 import { generateZoneFeatureGaffe, UpgradeInfoSingle as UpgradeInfoZone } from "@/games/Ignite-purple/features/zone/zoneFeatureGenerator";
@@ -432,7 +431,8 @@ export default function Home() {
   const router = useRouter();
 
   // ── Base game state ────────────────────────────────────────────────────────
-  const [reelStops,           setReelStops]           = useState([0, 0, 0, 0, 0]);
+  // Starts empty - the grid is populated only from an uploaded reelstrip.
+  const [reelStops,           setReelStops]           = useState<number[]>([]);
   const [scatColors,          setScatColors]          = useState<{ [k: string]: ScatType }>({});
   const [scatValues,          setScatValues]          = useState<{ [k: string]: string }>({});
   const [scatZoneSplitter,    setScatZoneSplitter]    = useState<{ [k: string]: string }>({});
@@ -445,13 +445,26 @@ export default function Home() {
   const [selectedFeatures,    setSelectedFeatures]    = useState<string[]>([]);
   const [activeFeatures,      setActiveFeatures]      = useState<string[]>([]);
 
-  // Bumped when an uploaded reelstrip replaces `reels`, forcing a re-render so
-  // the inline gaffe + base grid pick up the new (live-binding) reels.
-  const [, setReelsVersion] = useState(0);
+  // ── Dynamic grid: global row count + one global anchor-row offset ──────────
+  // Defaults match the original fixed layout (3 rows, landed symbol on row 1).
+  const [rows,   setRows]   = useState<number>(3);
+  const [offset, setOffset] = useState<number>(1);
+  // Keep the offset within the current row range when rows shrinks.
+  const handleSetRows = (r: number) => {
+    setRows(r);
+    setOffset((o) => Math.max(0, Math.min(o, r - 1)));
+  };
+
+  // Reels come only from an uploaded reelstrip (none are hardcoded).
+  const [reels, setReels] = useState<string[][]>([]);
   const handleUploadReels = (next: string[][]) => {
     setReels(next);
-    setReelsVersion((v) => v + 1);
+    setReelStops(Array(next.length).fill(0));
   };
+
+  // The feature grids are a fixed 5x3, so only the first FEATURE_ROWS visible
+  // rows seed feature coins (position = col * 3 + row).
+  const FEATURE_ROWS = 3;
 
   // ── Feature gaffe histories ────────────────────────────────────────────────
   const [extraGaffeHistory,  setExtraGaffeHistory]  = useState<string[]>([]);
@@ -472,7 +485,7 @@ export default function Home() {
   const gaffe = generateGaffe(
     reelStops, reels, scatColors, scatValues, selectedFeatures,
     grandEnabled, scatZoneSplitter, scatZoneMultipliers, scatBoostValues, scatSplitCount,
-    scatSplitValues
+    scatSplitValues, rows, offset
   );
 
   // ── Zone params from scats ─────────────────────────────────────────────────
@@ -480,9 +493,9 @@ export default function Home() {
     let splitter = 1; let multipliers: number[] = [];
     reelStops.forEach((stop, ri) => {
       const reel = reels[ri];
-      [-1, 0, 1].forEach((off) => {
-        const idx = (stop + off + reel.length) % reel.length;
-        if (reel[idx] === "SCAT") {
+      visibleCells(reel, stop ?? 0, offset, rows).forEach((cell) => {
+        const idx = cell.stripIndex;
+        if (cell.symbol === "SCAT" && idx !== null) {
           const k = `${ri}-${idx}`; const s = scatColors[k];
           if (s && (s.key === "blue" || s.key === "all")) {
             const zs = scatZoneSplitter[k];  if (zs) splitter = Number(zs);
@@ -493,16 +506,16 @@ export default function Home() {
       });
     });
     return { activeSplitter: splitter, activeMultipliers: multipliers };
-  }, [reelStops, scatColors, scatZoneSplitter, scatZoneMultipliers]);
+  }, [reels, reelStops, rows, offset, scatColors, scatZoneSplitter, scatZoneMultipliers]);
 
   // ── Boost by position (Strike) ─────────────────────────────────────────────
   const baseBoostByPosition = useMemo(() => {
     const map: Record<number, string> = {};
     reelStops.forEach((stop, ri) => {
       const reel = reels[ri];
-      [-1, 0, 1].forEach((off, rowIdx) => {
-        const idx = (stop + off + reel.length) % reel.length;
-        if (reel[idx] === "SCAT") {
+      visibleCells(reel, stop ?? 0, offset, rows).forEach((cell) => {
+        const idx = cell.stripIndex; const rowIdx = cell.row;
+        if (cell.symbol === "SCAT" && idx !== null && rowIdx < FEATURE_ROWS) {
           const k = `${ri}-${idx}`; const s = scatColors[k];
           if (s && STRIKE_SCAT_KEYS.has(s.key)) {
             const pos = ri * 3 + rowIdx; const bv = scatBoostValues[k];
@@ -512,16 +525,16 @@ export default function Home() {
       });
     });
     return map;
-  }, [reelStops, scatColors, scatBoostValues]);
+  }, [reels, reelStops, rows, offset, scatColors, scatBoostValues]);
 
   // ── Split count by position ────────────────────────────────────────────────
   const baseSplitCountByPosition = useMemo(() => {
     const map: Record<number, number> = {};
     reelStops.forEach((stop, ri) => {
       const reel = reels[ri];
-      [-1, 0, 1].forEach((off, rowIdx) => {
-        const idx = (stop + off + reel.length) % reel.length;
-        if (reel[idx] === "SCAT") {
+      visibleCells(reel, stop ?? 0, offset, rows).forEach((cell) => {
+        const idx = cell.stripIndex; const rowIdx = cell.row;
+        if (cell.symbol === "SCAT" && idx !== null && rowIdx < FEATURE_ROWS) {
           const k = `${ri}-${idx}`; const s = scatColors[k];
           if (s && SPLIT_SCAT_KEYS.has(s.key)) {
             const pos = ri * 3 + rowIdx; const sc = scatSplitCount[k];
@@ -531,23 +544,23 @@ export default function Home() {
       });
     });
     return map;
-  }, [reelStops, scatColors, scatSplitCount]);
+  }, [reels, reelStops, rows, offset, scatColors, scatSplitCount]);
 
   // ── Base coins ─────────────────────────────────────────────────────────────
   const baseCoinsGeneric = useMemo(() => {
     const result: { position: number; colorCode: number; value: string; fromBase: true }[] = [];
     reelStops.forEach((stop, ri) => {
       const reel = reels[ri];
-      [-1, 0, 1].forEach((off, rowIdx) => {
-        const idx = (stop + off + reel.length) % reel.length;
-        if (reel[idx] === "SCAT") {
+      visibleCells(reel, stop ?? 0, offset, rows).forEach((cell) => {
+        const idx = cell.stripIndex; const rowIdx = cell.row;
+        if (cell.symbol === "SCAT" && idx !== null && rowIdx < FEATURE_ROWS) {
           const k = `${ri}-${idx}`; const s = scatColors[k]; const v = scatValues[k];
           if (s) result.push({ position: ri * 3 + rowIdx, colorCode: SCAT_COLOR_CODE[s.key] ?? 4, value: v || "1", fromBase: true });
         }
       });
     });
     return result;
-  }, [reelStops, scatColors, scatValues]);
+  }, [reels, reelStops, rows, offset, scatColors, scatValues]);
 
   const baseCoinsForStrike = useMemo((): StrikeFeatureCoin[] =>
     baseCoinsGeneric.map((c) => {
@@ -596,9 +609,9 @@ export default function Home() {
     const result: ComboCoin[] = [];
     reelStops.forEach((stop, ri) => {
       const reel = reels[ri];
-      [-1, 0, 1].forEach((off, rowIdx) => {
-        const idx = (stop + off + reel.length) % reel.length;
-        if (reel[idx] === "SCAT") {
+      visibleCells(reel, stop ?? 0, offset, rows).forEach((cell) => {
+        const idx = cell.stripIndex; const rowIdx = cell.row;
+        if (cell.symbol === "SCAT" && idx !== null && rowIdx < FEATURE_ROWS) {
           const k = `${ri}-${idx}`; const s = scatColors[k]; const v = scatValues[k];
           if (s) {
             const pos        = ri * 3 + rowIdx;
@@ -613,7 +626,7 @@ export default function Home() {
       });
     });
     return result;
-  }, [activeFeatures, isComboFeature, reelStops, scatColors, scatValues, scatBoostValues, scatSplitCount]);
+  }, [activeFeatures, isComboFeature, reels, reelStops, rows, offset, scatColors, scatValues, scatBoostValues, scatSplitCount]);
 
   // ── All feature gaffe lines (for output panel) ────────────────────────────
   const featureGaffes = [
@@ -662,6 +675,9 @@ export default function Home() {
             selectedFeatures={selectedFeatures} setSelectedFeatures={setSelectedFeatures}
             onGoTo={handleGoTo}
             onUploadReels={handleUploadReels}
+            reels={reels}
+            rows={rows}     setRows={handleSetRows}
+            offset={offset} setOffset={setOffset}
           />
 
           {/* ── SINGLE FEATURES ───────────────────────── */}

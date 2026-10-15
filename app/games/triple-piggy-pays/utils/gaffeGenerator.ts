@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { visibleCells } from "@/lib/reelGrid";
 
 function getRandomColor() {
   const colors = ["red", "blue", "purple"];
@@ -29,9 +30,14 @@ featureTriggers: {
   WHEEL: boolean;
   TOWER: boolean;
   ZONE: boolean;
-}
+},
+  rows: number,
+  offset: number
 ) {
-  const offsets = [-1, 0, 1, 2];
+  // Reel stops are 1-based, so the landed strip index is stop - 1; the visible
+  // window is derived from the global rows / anchor-row offset.
+  const visible = (reel: string[], stop: number) =>
+    visibleCells(reel, stop - 1, offset, rows);
 
   //Check SCAT
   let hasAnyScat = false;
@@ -39,9 +45,8 @@ featureTriggers: {
   reelStops.forEach((stop, reelIndex) => {
     const reel = reels[reelIndex];
 
-    offsets.forEach((offset) => {
-      const index = ((stop - 1 + offset + reel.length) % reel.length)
-      if (reel[index] === "SCAT") {
+    visible(reel, stop).forEach((cell) => {
+      if (cell.symbol === "SCAT") {
         hasAnyScat = true;
       }
     });
@@ -53,11 +58,8 @@ featureTriggers: {
   reelStops.forEach((stop, reelIndex) => {
     const reel = reels[reelIndex];
 
-    offsets.forEach((offset) => {
-      const index = ((stop - 1 + offset + reel.length) % reel.length)
-     
-
-      if (reel[index] === "STACK") {
+    visible(reel, stop).forEach((cell) => {
+      if (cell.symbol === "STACK") {
         hasStack = true;
       }
     });
@@ -88,11 +90,9 @@ featureTriggers: {
 
       const scatPositions: number[] = [];
 
-      offsets.forEach((offset) => {
-        const index = ((stop - 1 + offset + reel.length) % reel.length)
-      
-        if (reel[index] === "SCAT") {
-          scatPositions.push(index);
+      visible(reel, stop).forEach((cell) => {
+        if (cell.symbol === "SCAT" && cell.stripIndex !== null) {
+          scatPositions.push(cell.stripIndex);
         }
       });
 

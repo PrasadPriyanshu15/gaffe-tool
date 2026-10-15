@@ -4,13 +4,13 @@
 
 import { useState } from "react";
 import ReelColumn, { ScatType, ScatKey } from "./ReelColumn";
-import { reels } from "./reels";
 import ReelstripUploader from "@/components/ReelstripUploader";
 import { visibleCells } from "@/lib/reelGrid";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Props = {
+  reels:               string[][];
   reelStops:           number[];
   setReelStops:        (val: number[]) => void;
   scatColors:          { [key: string]: ScatType };
@@ -72,6 +72,7 @@ const FEATURE_META: Record<ScatKey, {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function BaseGame({
+  reels,
   reelStops,          setReelStops,
   scatColors,         setScatColors,
   scatValues,         setScatValues,

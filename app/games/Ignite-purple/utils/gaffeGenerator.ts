@@ -205,6 +205,7 @@
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { visibleCells } from "@/lib/reelGrid";
 
 type ScatType = {
   key: string;
@@ -223,15 +224,17 @@ export function generateGaffe(
   scatZoneMultipliers: { [key: string]: string },
   scatBoostValues: { [key: string]: string },
   scatSplitCount: { [key: string]: string },   // NEW
-  scatSplitValues: { [key: string]: string[] } = {}   // NEW — per-split-coin values. index j = split coin (j+2), i.e. array[0] is the 2nd coin's value, array[1] is the 3rd coin's value, etc.
+  scatSplitValues: { [key: string]: string[] } = {},   // NEW — per-split-coin values. index j = split coin (j+2), i.e. array[0] is the 2nd coin's value, array[1] is the 3rd coin's value, etc.
+  rows: number = 3,
+  offset: number = 1
 ) {
-  const offsets = [-1, 0, 1];
   const result: any = { reelStopPositions: reelStops };
 
   const scatSequence: string[] = [];
   const landedCoins: any[] = [];
-  const boostValuesArray: (number | string)[] = Array(15).fill(0);
-  const splitCountArray: (number | string)[] = Array(15).fill(0);
+  // One slot per visible cell: position = reelIndex * rows + rowIndex.
+  const boostValuesArray: (number | string)[] = Array(reels.length * rows).fill(0);
+  const splitCountArray: (number | string)[] = Array(reels.length * rows).fill(0);
 
   let zoneSplitterValue: string | null = null;
   let zoneMultipliersValue: number[] | null = null;
@@ -239,14 +242,15 @@ export function generateGaffe(
   reelStops.forEach((stop, reelIndex) => {
     const reel = reels[reelIndex];
 
-    offsets.forEach((offset, rowIndex) => {
-      const index = (stop + offset + reel.length) % reel.length;
+    visibleCells(reel, stop ?? 0, offset, rows).forEach((cell) => {
+      const index = cell.stripIndex;
+      const rowIndex = cell.row;
 
-      if (reel[index] === "SCAT") {
+      if (cell.symbol === "SCAT" && index !== null) {
         const key          = `${reelIndex}-${index}`;
         const scat         = scatColors[key];
         const value        = scatValues[key];
-        const positionIndex = reelIndex * 3 + rowIndex;
+        const positionIndex = reelIndex * rows + rowIndex;
 
         if (scat) {
           scatSequence.push(scat.label);

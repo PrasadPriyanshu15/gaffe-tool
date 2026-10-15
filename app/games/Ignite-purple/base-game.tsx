@@ -7,7 +7,6 @@
 
 // import { useState } from "react";
 // import ReelColumn from "../Ignite-purple/components/ReelColumn";
-// import { reels } from "./reels";
 
 // type ScatType = {
 //   key: "orange" | "blue" | "cerise" | "green" | "all";
@@ -168,8 +167,8 @@
 
 import { useState } from "react";
 import ReelColumn from "../Ignite-purple/components/ReelColumn";
-import { reels } from "./reels";
 import ReelstripUploader from "@/components/ReelstripUploader";
+import { visibleCells } from "@/lib/reelGrid";
 
 type ScatType = {
   key: "orange" | "blue" | "cerise" | "green" | "all";
@@ -204,6 +203,12 @@ type Props = {
   setSelectedFeatures: (val: string[]) => void;
   onGoTo: (features: string[]) => void;
   onUploadReels?: (reels: string[][]) => void;
+
+  reels: string[][];
+  rows: number;
+  setRows: (val: number) => void;
+  offset: number;
+  setOffset: (val: number) => void;
 };
 
 const ALL_FEATURES = ["strike", "zone", "split", "extra"];
@@ -222,17 +227,19 @@ export default function BaseGame({
   selectedFeatures, setSelectedFeatures,
   onGoTo,
   onUploadReels,
+  reels,
+  rows, setRows,
+  offset, setOffset,
 }: Props) {
   const [isOpen, setIsOpen] = useState(true);
 
   // Collect features visible from current scats
   const visibleFeatures = new Set<string>();
   reels.forEach((reel, reelIndex) => {
-    const stop = reelStops[reelIndex];
-    [-1, 0, 1].forEach((offset) => {
-      const index = (stop + offset + reel.length) % reel.length;
-      if (reel[index] === "SCAT") {
-        const key  = `${reelIndex}-${index}`;
+    const stop = reelStops[reelIndex] ?? 0;
+    visibleCells(reel, stop, offset, rows).forEach((cell) => {
+      if (cell.symbol === "SCAT" && cell.stripIndex !== null) {
+        const key  = `${reelIndex}-${cell.stripIndex}`;
         const scat = scatColors[key];
         if (scat) {
           if (scat.key === "all") ALL_FEATURES.forEach((f) => visibleFeatures.add(f));
@@ -257,14 +264,50 @@ export default function BaseGame({
             <ReelstripUploader onLoaded={onUploadReels} />
           </div>
 
+          {/* GRID ROWS + OFFSET (global) */}
+          <div className="mb-4 flex items-center gap-3 flex-wrap">
+            <label className="text-sm text-gray-300">Rows</label>
+            <input
+              type="number"
+              min={1}
+              max={12}
+              value={rows}
+              onChange={(e) =>
+                setRows(Math.max(1, Math.min(12, Number(e.target.value) || 1)))
+              }
+              className="w-16 px-2 py-1 bg-gray-700 text-white rounded"
+            />
+
+            <label className="text-sm text-gray-300 ml-1">Offset</label>
+            <select
+              value={Math.max(0, Math.min(offset, rows - 1))}
+              onChange={(e) => setOffset(Number(e.target.value))}
+              className="px-2 py-1 bg-gray-700 text-white rounded"
+            >
+              {Array.from({ length: Math.max(rows, 1) }, (_, r) => (
+                <option key={r} value={r}>row {r}</option>
+              ))}
+            </select>
+            <span className="text-xs text-gray-500 italic">
+              anchor row where each reel&apos;s stop symbol lands
+            </span>
+          </div>
+
           {/* REELS */}
-          <div className="flex gap-4">
+          {reels.length === 0 ? (
+            <div className="text-sm text-gray-400 italic py-6 text-center border border-dashed border-gray-600 rounded-lg">
+              No reelstrip loaded. Upload a reelstrip JSON to populate the grid.
+            </div>
+          ) : (
+          <div className="flex gap-4 overflow-x-auto pb-1">
             {reels.map((reel, i) => (
               <ReelColumn
                 key={i}
                 reelIndex={i}
                 reel={reel}
-                stop={reelStops[i]}
+                stop={reelStops[i] ?? 0}
+                rows={rows}
+                offset={offset}
                 setStop={(idx, val) => {
                   const u = [...reelStops]; u[idx] = val; setReelStops(u);
                 }}
@@ -278,6 +321,7 @@ export default function BaseGame({
               />
             ))}
           </div>
+          )}
 
           {/* FEATURE ENABLED + GRAND */}
           <div className="mt-4 flex gap-3 items-center flex-wrap">

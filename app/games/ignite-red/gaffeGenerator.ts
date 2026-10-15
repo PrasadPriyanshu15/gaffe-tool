@@ -120,8 +120,8 @@
 
 //! latest working vorrect
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { reels } from "./reels";
-import { ScatType, posToCol, posToRow } from "./config";
+import { visibleCells } from "@/lib/reelGrid";
+import { ScatType } from "./config";
 
 export type ScatsState = {
   colors:          { [key: string]: ScatType };
@@ -135,36 +135,37 @@ export type ScatsState = {
 
 /**
  * Generate base-game gaffe object.
- * reelStopPositions always has 5 elements (one per reel), initially 0.
- * Only updates when a SCAT is visible and GO TO is pressed.
+ * reelStopPositions has one element per uploaded reel (initially 0).
+ * The visible grid is dynamic: `rows` rows with the stop symbol on the `offset` row.
  * Positions in landedCoins use metric [col, row] (column-major).
  * Red / All scats → two entries [col,row,VALUE,LEFT] and [col,row,VALUE,RIGHT].
  */
 export function generateGaffe(
   reelStops:        number[],
+  reels:            string[][],
   scats:            ScatsState,
   selectedFeatures: string[],
-  grandEnabled:     boolean
+  grandEnabled:     boolean,
+  rows:             number,
+  offset:           number
 ): any {
-  // reelStopPositions: always 5 elements, one per reel stop
-  const reelStopPositions = reelStops.length === 5 ? [...reelStops] : [0, 0, 0, 0, 0];
+  // reelStopPositions: one element per reel stop
+  const reelStopPositions = [...reelStops];
 
   const result: any                         = { reelStopPositions };
   const scatSequence: string[]              = [];
   const landedCoins:  any[]                 = [];
-  const boostArr: (number | string)[]       = Array(15).fill(0);
+  const boostArr: (number | string)[]       = Array(reels.length * rows).fill(0);
   let zoneSplitter:   string | null         = null;
   let zoneMultipliers: number[] | null      = null;
 
   reelStops.forEach((stop, ri) => {
-    const reel = reels[ri];
-    [-1, 0, 1].forEach((offset, rowIdx) => {
-      const idx = (stop + offset + reel.length) % reel.length;
-      if (reel[idx] !== "SCAT") return;
+    visibleCells(reels[ri], stop, offset, rows).forEach((cell) => {
+      if (cell.symbol !== "SCAT" || cell.stripIndex === null) return;
 
-      const key  = `${ri}-${idx}`;
+      const key  = `${ri}-${cell.stripIndex}`;
       const scat = scats.colors[key] as ScatType | undefined;
-      const pos  = ri * 3 + rowIdx;
+      const pos  = ri * rows + cell.row;
 
       if (!scat) return;
       scatSequence.push(scat.label);
@@ -191,11 +192,11 @@ export function generateGaffe(
       if (isDouble) {
         const lv = scats.leftValues[key];
         const rv = scats.rightValues[key];
-        if (lv) landedCoins.push([posToCol(pos), posToRow(pos), `COIN_${lv}`, "LEFT"]);
-        if (rv) landedCoins.push([posToCol(pos), posToRow(pos), `COIN_${rv}`, "RIGHT"]);
+        if (lv) landedCoins.push([ri, cell.row, `COIN_${lv}`, "LEFT"]);
+        if (rv) landedCoins.push([ri, cell.row, `COIN_${rv}`, "RIGHT"]);
       } else {
         const val = scats.values[key];
-        if (val) landedCoins.push([posToCol(pos), posToRow(pos), `COIN_${val}`]);
+        if (val) landedCoins.push([ri, cell.row, `COIN_${val}`]);
       }
     });
   });
@@ -215,7 +216,7 @@ export function generateGaffe(
 
 /** Serialize gaffe object → output string */
 export function formatGaffe(gaffe: any): string {
-  // reelStopPositions: always 5 elements
+  // reelStopPositions: one element per reel
   const rsp = gaffe.reelStopPositions as number[];
   let out = `[reelStopPositions:[${rsp.join(",")}]`;
 

@@ -339,7 +339,7 @@ import ExtraFeature from "./ExtraFeature";
 import DoubleFeature from "./DoubleFeature";
 import UltraFeature from "./UltraFeature";
 import CombinationFeature from "./CombinationFeature";
-import { reels, setReels } from "./reels";
+import { clampOffset, visibleCells } from "@/lib/reelGrid";
 import { ScatsState, generateGaffe, formatGaffe } from "./gaffeGenerator";
 import { SCAT_COLOR_CODE, ScatType } from "./config";
 import {
@@ -363,15 +363,13 @@ const DOUBLE_SCAT_KEYS = new Set(["red", "all"]);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function deriveZoneParams(reelStops: number[], scats: ScatsState) {
+function deriveZoneParams(reels: string[][], reelStops: number[], rows: number, offset: number, scats: ScatsState) {
   let splitter = 1;
   let multipliers: number[] = [];
   reelStops.forEach((stop, ri) => {
-    const reel = reels[ri];
-    [-1, 0, 1].forEach(off => {
-      const idx = (stop + off + reel.length) % reel.length;
-      if (reel[idx] !== "SCAT") return;
-      const k = `${ri}-${idx}`;
+    visibleCells(reels[ri], stop, offset, rows).forEach(cell => {
+      if (cell.symbol !== "SCAT" || cell.stripIndex === null) return;
+      const k = `${ri}-${cell.stripIndex}`;
       const s = scats.colors[k] as ScatType | undefined;
       if (s && ZONE_SCAT_KEYS.has(s.key)) {
         const zs = scats.zoneSplitter[k];    if (zs) splitter = Number(zs);
@@ -383,33 +381,31 @@ function deriveZoneParams(reelStops: number[], scats: ScatsState) {
   return { splitter, multipliers };
 }
 
-function buildGenericBaseCoins(reelStops: number[], scats: ScatsState): ZoneFeatureCoin[] {
+function buildGenericBaseCoins(reels: string[][], reelStops: number[], rows: number, offset: number, scats: ScatsState): ZoneFeatureCoin[] {
   const result: ZoneFeatureCoin[] = [];
   reelStops.forEach((stop, ri) => {
-    const reel = reels[ri];
-    [-1, 0, 1].forEach((off, rowIdx) => {
-      const idx = (stop + off + reel.length) % reel.length;
-      if (reel[idx] !== "SCAT") return;
-      const k = `${ri}-${idx}`;
+    visibleCells(reels[ri], stop, offset, rows).forEach(cell => {
+      // Feature grids are fixed 5x3, so only the first 3 visible rows seed coins.
+      if (cell.symbol !== "SCAT" || cell.stripIndex === null || cell.row >= 3) return;
+      const k = `${ri}-${cell.stripIndex}`;
       const s = scats.colors[k] as ScatType | undefined;
       const v = scats.values[k];
-      if (s) result.push({ position: ri * 3 + rowIdx, colorCode: SCAT_COLOR_CODE[s.key] ?? 4, value: v || "100", fromBase: true });
+      if (s) result.push({ position: ri * 3 + cell.row, colorCode: SCAT_COLOR_CODE[s.key] ?? 4, value: v || "100", fromBase: true });
     });
   });
   return result;
 }
 
-function buildDoubleBaseCoins(reelStops: number[], scats: ScatsState): DoubleFeatureCoin[] {
+function buildDoubleBaseCoins(reels: string[][], reelStops: number[], rows: number, offset: number, scats: ScatsState): DoubleFeatureCoin[] {
   const result: DoubleFeatureCoin[] = [];
   reelStops.forEach((stop, ri) => {
-    const reel = reels[ri];
-    [-1, 0, 1].forEach((off, rowIdx) => {
-      const idx = (stop + off + reel.length) % reel.length;
-      if (reel[idx] !== "SCAT") return;
-      const k = `${ri}-${idx}`;
+    visibleCells(reels[ri], stop, offset, rows).forEach(cell => {
+      // Feature grids are fixed 5x3, so only the first 3 visible rows seed coins.
+      if (cell.symbol !== "SCAT" || cell.stripIndex === null || cell.row >= 3) return;
+      const k = `${ri}-${cell.stripIndex}`;
       const s = scats.colors[k] as ScatType | undefined;
       if (s) result.push({
-        position:   ri * 3 + rowIdx,
+        position:   ri * 3 + cell.row,
         colorCode:  SCAT_COLOR_CODE[s.key] ?? 4,
         leftValue:  scats.leftValues[k]  || "",
         rightValue: scats.rightValues[k] || "",
@@ -420,18 +416,17 @@ function buildDoubleBaseCoins(reelStops: number[], scats: ScatsState): DoubleFea
   return result;
 }
 
-function buildUltraBaseCoins(reelStops: number[], scats: ScatsState): UltraFeatureCoin[] {
+function buildUltraBaseCoins(reels: string[][], reelStops: number[], rows: number, offset: number, scats: ScatsState): UltraFeatureCoin[] {
   const result: UltraFeatureCoin[] = [];
   reelStops.forEach((stop, ri) => {
-    const reel = reels[ri];
-    [-1, 0, 1].forEach((off, rowIdx) => {
-      const idx = (stop + off + reel.length) % reel.length;
-      if (reel[idx] !== "SCAT") return;
-      const k = `${ri}-${idx}`;
+    visibleCells(reels[ri], stop, offset, rows).forEach(cell => {
+      // Feature grids are fixed 5x3, so only the first 3 visible rows seed coins.
+      if (cell.symbol !== "SCAT" || cell.stripIndex === null || cell.row >= 3) return;
+      const k = `${ri}-${cell.stripIndex}`;
       const s = scats.colors[k] as ScatType | undefined;
       const v = scats.values[k];
       if (s) result.push({
-        position:   ri * 3 + rowIdx,
+        position:   ri * 3 + cell.row,
         colorCode:  SCAT_COLOR_CODE[s.key] ?? 4,
         value:      v || "1",
         boostValue: ULTRA_SCAT_KEYS.has(s.key) ? (scats.boostValues[k] || "") : "",
@@ -443,20 +438,19 @@ function buildUltraBaseCoins(reelStops: number[], scats: ScatsState): UltraFeatu
   return result;
 }
 
-function buildComboBaseCoins(activeFeatures: string[], reelStops: number[], scats: ScatsState): ComboCoin[] {
+function buildComboBaseCoins(activeFeatures: string[], reels: string[][], reelStops: number[], rows: number, offset: number, scats: ScatsState): ComboCoin[] {
   const result: ComboCoin[] = [];
   const hasDouble = activeFeatures.includes("double");
   const hasUltra  = activeFeatures.includes("ultra");
   reelStops.forEach((stop, ri) => {
-    const reel = reels[ri];
-    [-1, 0, 1].forEach((off, rowIdx) => {
-      const idx = (stop + off + reel.length) % reel.length;
-      if (reel[idx] !== "SCAT") return;
-      const k = `${ri}-${idx}`;
+    visibleCells(reels[ri], stop, offset, rows).forEach(cell => {
+      // Feature grids are fixed 5x3, so only the first 3 visible rows seed coins.
+      if (cell.symbol !== "SCAT" || cell.stripIndex === null || cell.row >= 3) return;
+      const k = `${ri}-${cell.stripIndex}`;
       const s = scats.colors[k] as ScatType | undefined;
       const v = scats.values[k];
       if (s) {
-        const pos       = ri * 3 + rowIdx;
+        const pos       = ri * 3 + cell.row;
         const colorCode = getComboScatSeedColor(activeFeatures, s.key);
         result.push({
           position:   pos,
@@ -478,7 +472,9 @@ function buildComboBaseCoins(activeFeatures: string[], reelStops: number[], scat
 export default function Home() {
 
   // ── Base game state ─────────────────────────────────────────────────────────
-  const [reelStops,        setReelStops]        = useState([0, 0, 0, 0, 0]);
+  // Starts empty — the grid is populated only from an uploaded reelstrip.
+  const [reels,            setReels]            = useState<string[][]>([]);
+  const [reelStops,        setReelStops]        = useState<number[]>([]);
   const [scats,            setScats]            = useState<ScatsState>(EMPTY_SCATS);
   const [featureEnabled,   setFeatureEnabled]   = useState(true);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
@@ -486,22 +482,28 @@ export default function Home() {
   // ── Active features (locked when "Go to" clicked) ──────────────────────────
   const [activeFeatures, setActiveFeatures] = useState<string[]>([]);
 
-  // Bumped when an uploaded reelstrip replaces `reels` (the generator reads it
-  // as a live module binding), so the gaffe recomputes and the grid re-renders.
-  const [reelsVersion, setReelsVersion] = useState(0);
+  // ── Dynamic grid: global row count + one global anchor-row offset ──────────
+  // Defaults match the original 3-row window with the stop on the middle row.
+  const DEFAULT_ROWS = 3, DEFAULT_OFFSET = 1;
+  const [rows,   setRows]   = useState<number>(DEFAULT_ROWS);
+  const [offset, setOffset] = useState<number>(DEFAULT_OFFSET);
+  // Keep the offset within the current row range when rows shrinks.
+  const handleSetRows = (r: number) => {
+    setRows(r);
+    setOffset((o) => clampOffset(o, r));
+  };
+
+  // Uploaded reelstrip replaces the reels; every stop returns to 0.
   const handleUploadReels = (next: string[][]) => {
     setReels(next);
-    setReelsVersion((v) => v + 1);
+    setReelStops(Array(next.length).fill(0));
   };
 
   // ── Gaffe output histories ──────────────────────────────────────────────────
   // Always reflect current reel stops — updates live as user scrolls reels
   const baseGaffeLine = useMemo(
-    () => {
-      void reelsVersion; // recompute when an uploaded reelstrip replaces `reels` (a live binding)
-      return formatGaffe(generateGaffe(reelStops, scats, selectedFeatures, false));
-    },
-    [reelStops, scats, selectedFeatures, reelsVersion]
+    () => formatGaffe(generateGaffe(reelStops, reels, scats, selectedFeatures, false, rows, offset)),
+    [reelStops, reels, scats, selectedFeatures, rows, offset]
   );
   const [zoneHistory,   setZoneHistory]   = useState<string[]>([]);
   const [extraHistory,  setExtraHistory]  = useState<string[]>([]);
@@ -515,16 +517,16 @@ export default function Home() {
 
   // ── Derived values ──────────────────────────────────────────────────────────
   const { splitter: activeSplitter, multipliers: activeMultipliers } = useMemo(
-    () => deriveZoneParams(reelStops, scats),
-    [reelStops, scats]
+    () => deriveZoneParams(reels, reelStops, rows, offset, scats),
+    [reels, reelStops, rows, offset, scats]
   );
 
-  const genericBaseCoins = useMemo(() => buildGenericBaseCoins(reelStops, scats), [reelStops, scats]);
-  const doubleBaseCoins  = useMemo(() => buildDoubleBaseCoins(reelStops, scats),  [reelStops, scats]);
-  const ultraBaseCoins   = useMemo(() => buildUltraBaseCoins(reelStops, scats),   [reelStops, scats]);
+  const genericBaseCoins = useMemo(() => buildGenericBaseCoins(reels, reelStops, rows, offset, scats), [reels, reelStops, rows, offset, scats]);
+  const doubleBaseCoins  = useMemo(() => buildDoubleBaseCoins(reels, reelStops, rows, offset, scats),  [reels, reelStops, rows, offset, scats]);
+  const ultraBaseCoins   = useMemo(() => buildUltraBaseCoins(reels, reelStops, rows, offset, scats),   [reels, reelStops, rows, offset, scats]);
   const comboBaseCoins   = useMemo(
-    () => activeFeatures.length > 1 ? buildComboBaseCoins(activeFeatures, reelStops, scats) : [],
-    [activeFeatures, reelStops, scats]
+    () => activeFeatures.length > 1 ? buildComboBaseCoins(activeFeatures, reels, reelStops, rows, offset, scats) : [],
+    [activeFeatures, reels, reelStops, rows, offset, scats]
   );
 
   const isSingleFeature = activeFeatures.length === 1;
@@ -570,6 +572,24 @@ export default function Home() {
     setFeatureKey(k => k + 1);
   };
 
+  /**
+   * Reset the base game back to its initial position and state. Keeps the
+   * uploaded reelstrip loaded but returns every stop to 0, restores the default
+   * rows/offset, clears SCAT assignments, feature toggles and any active feature.
+   */
+  const handleReset = () => {
+    setReelStops(reels.length ? Array(reels.length).fill(0) : []);
+    setScats(EMPTY_SCATS);
+    setFeatureEnabled(true);
+    setSelectedFeatures([]);
+    setRows(DEFAULT_ROWS);
+    setOffset(DEFAULT_OFFSET);
+    clearAllHistory();
+    setCarryCoins(null);
+    setActiveFeatures([]);
+    setFeatureKey(k => k + 1);
+  };
+
   const allLines: string[] = [
     baseGaffeLine,
     ...zoneHistory, ...extraHistory, ...doubleHistory,
@@ -589,12 +609,16 @@ export default function Home() {
         <div className="flex flex-col gap-4 flex-1 min-w-0">
 
           <BaseGame
+            reels={reels}
             reelStops={reelStops}           setReelStops={setReelStops}
             scats={scats}                   setScats={setScats}
             featureEnabled={featureEnabled} setFeatureEnabled={setFeatureEnabled}
             selectedFeatures={selectedFeatures} setSelectedFeatures={setSelectedFeatures}
             onGoTo={handleGoTo}
+            onReset={handleReset}
             onUploadReels={handleUploadReels}
+            rows={rows}                     setRows={handleSetRows}
+            offset={offset}                 setOffset={setOffset}
           />
 
           {isSingleFeature && activeFeatures.includes("zone") && (

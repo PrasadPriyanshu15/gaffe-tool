@@ -10,7 +10,6 @@ import WheelFeature          from "./wheelFeature";
 import ZoneFeature           from "./zoneFeature";
 import TowerFeature          from "./towerFeature";
 import CombinationFeature    from "./combinationFeature";
-import { reels, setReels }   from "./reels";
 import {
   generateGaffe,
   getBaseCoinsForFeature,
@@ -55,13 +54,11 @@ export default function Page() {
     setOffset((o) => Math.max(0, Math.min(o, r - 1)));
   };
 
-  // Bumped whenever the reels are replaced by an uploaded reelstrip, so the
-  // gaffe recomputes and the base grid re-renders from the new (live) reels.
-  const [reelsVersion, setReelsVersion] = useState(0);
+  // Reels come only from an uploaded reelstrip (none are hardcoded).
+  const [reels, setReels] = useState<string[][]>([]);
   const handleUploadReels = (next: string[][]) => {
     setReels(next);
     setReelStops(Array(next.length).fill(0));
-    setReelsVersion((v) => v + 1);
   };
 
   // ── Navigation ────────────────────────────────────────────────────────────
@@ -86,17 +83,14 @@ export default function Page() {
 
   // ── Live base gaffe ───────────────────────────────────────────────────────
   const gaffe = useMemo(
-    () => {
-      void reelsVersion; // recompute when an uploaded reelstrip replaces `reels` (a live binding)
-      return generateGaffe(
-        reelStops, reels,
-        scatColors, scatValues,
-        selectedFeatures, featureEnabled,
-        grandEnabled, majorEnabled, stackSymbol,
-        rows, offset
-      );
-    },
-    [reelStops, scatColors, scatValues, selectedFeatures, featureEnabled, grandEnabled, majorEnabled, stackSymbol, rows, offset, reelsVersion]
+    () => generateGaffe(
+      reelStops, reels,
+      scatColors, scatValues,
+      selectedFeatures, featureEnabled,
+      grandEnabled, majorEnabled, stackSymbol,
+      rows, offset
+    ),
+    [reelStops, reels, scatColors, scatValues, selectedFeatures, featureEnabled, grandEnabled, majorEnabled, stackSymbol, rows, offset]
   );
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -247,6 +241,7 @@ export default function Page() {
 
           {/* Base Game — always visible */}
           <BaseGame
+            reels={reels}
             reelStops={reelStops}           setReelStops={setReelStops}
             scatColors={scatColors}         setScatColors={setScatColors}
             scatValues={scatValues}         setScatValues={setScatValues}
