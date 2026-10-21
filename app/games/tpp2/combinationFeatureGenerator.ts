@@ -111,13 +111,13 @@ export const GOLD_COIN_VALUES: string[] = [
   "MINOR", "MINI", "150", "125", "100", "70", "60", "50", "40", "25", "15", "10", "5", "4",
 ];
 export const RED_COIN_VALUES: string[] = [
-  "MINOR", "MINI", "750", "500", "400", "300", "250", "200", "150", "100", "80", "50", "30", "20",
+  "MINOR", "MINI", "150", "125", "100", "70", "60", "50", "40", "25", "15", "10", "5", "4",
 ];
 export const BLUE_COIN_VALUES: string[] = [
   "MINOR", "MINI", "150", "125", "100", "70", "60", "50",
 ];
 export const PURPLE_COIN_VALUES: string[] = [
-  "MINOR", "MINI", "750", "500", "400", "300", "250", "200", "150", "100", "80", "50", "30", "20",
+  "MINOR", "MINI", "150", "125", "100", "70", "60", "50", "40", "25", "15", "10", "5", "4",
 ];
  
 // Generic alias kept for backwards compatibility with any existing callers.
