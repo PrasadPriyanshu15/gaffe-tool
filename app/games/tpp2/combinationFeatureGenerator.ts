@@ -111,7 +111,7 @@ export const GOLD_COIN_VALUES: string[] = [
   "MINOR", "MINI", "150", "125", "100", "70", "60", "50", "40", "25", "15", "10", "5", "4",
 ];
 export const RED_COIN_VALUES: string[] = [
-  "MINOR", "MINI", "150", "125", "100", "70", "60", "50", "40", "25", "15", "10", "5", "4",
+  "MINOR", "MINI", "150", "125", "100", "70", "60", "50", "40", "25",
 ];
 export const BLUE_COIN_VALUES: string[] = [
   "MINOR", "MINI", "150", "125", "100", "70", "60", "50",
