@@ -208,7 +208,9 @@ export default function ZoneFeature({ baseCoins, onSpin, onReset, onUpgrade }: P
       const carried = buildCarried(absorbedGrid).map(coin => {
         if (coin.type !== "PURPLE") return coin;
         const remaining = remainingByPos.get(coin.pos);
-        if (remaining === undefined) return coin;
+        // No active zone: its zone already used all charges on an earlier spin
+        // (finished zones are dropped), so it must stay inactive after upgrade.
+        if (remaining === undefined) return { ...coin, spent: true };
         return remaining <= 0 ? { ...coin, spent: true } : { ...coin, charges: remaining };
       });
       // The upgrade coin sits in an always-unlocked row, so it carries +1 toward
