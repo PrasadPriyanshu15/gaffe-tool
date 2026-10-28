@@ -173,6 +173,10 @@ export default function CombinationFeature({
  
   // Track previously computed fUnlock to detect when a new row unlocks
   const prevFUnlock = useRef<number>(ROWS_LOCKED);
+  // Row-unlock boundary as of the last spin (see "Derived: unlock state" below).
+  const [committedFUnlock, setCommittedFUnlock] = useState<number>(
+    () => computeUnlockState(seedGrid(), carriedUnlockBonus ?? 0).fUnlocked
+  );
   const zoneCounter = useRef(0);
   /** Snapshot of GLOBAL flat positions occupied at the last spin. */
   const lastSnapshot = useRef<Set<number>>(new Set());
@@ -224,6 +228,7 @@ export default function CombinationFeature({
     // upgrade coin, plus any credit accumulated in prior features) so a row that
     // unlocked right before the upgrade stays unlocked here.
     setAbsorbed({ red: 0, blue: 0, purple: 0, unlock: carriedUnlockBonus ?? 0 });
+    setCommittedFUnlock(computeUnlockState(g, carriedUnlockBonus ?? 0).fUnlocked);
     prevFUnlock.current = ROWS_LOCKED;
 
     const snap = new Set<number>();
@@ -239,15 +244,22 @@ export default function CombinationFeature({
   // is never written into the grid and vanishes on the next spin. Gate the
   // "is it in an unlocked row?" test on the grid+absorbed boundary (without the
   // upgrade coin) to avoid a self-referential loop, exactly as standalone Tower.
+  //
+  // Two boundaries: `liveFUnlock` reflects every coin placed so far (drives the
+  // green ✓ / hint so the user sees a row earned its coins), while `fUnlock`
+  // is the COMMITTED boundary, frozen at the last spin. In the real game a row
+  // only opens after the spin that lands its coins completes, so all gaffe
+  // logic (locked-row coin rules, upgrade placement, absorption) uses `fUnlock`.
   const upgradeInUnlockedRow =
     isTwr && !!upgradeCoin &&
-    (upgradeCoin.pos % ROWS_TOTAL) >= computeUnlockState(grid, absorbed.unlock).fUnlocked;
-  const { fUnlocked: fUnlock, totalUnlockedCoins } = isTwr
+    (upgradeCoin.pos % ROWS_TOTAL) >= committedFUnlock;
+  const { fUnlocked: liveFUnlock, totalUnlockedCoins } = isTwr
     ? computeUnlockState(grid, absorbed.unlock + (upgradeInUnlockedRow ? 1 : 0))
     : { fUnlocked: 0, totalUnlockedCoins: 0 };
+  const fUnlock = isTwr ? committedFUnlock : 0;
   const hint = isTwr ? unlockHint(totalUnlockedCoins) : null;
- 
- 
+
+
   const isUnlocked = (r: number) => !isTwr || r >= fUnlock;
  
   // ── When fUnlock decreases (new row unlocked), rebuild zones ─────────────
@@ -295,7 +307,8 @@ export default function CombinationFeature({
   const handleCellClick = (r: number, c: number) => {
     // Placing an upgrade coin: only onto an EMPTY cell, only one at a time.
     if (armedColor) {
-      if (grid[r][c].type === "EMPTY") {
+      // Upgrade coins may only land in rows unlocked as of the last spin.
+      if (grid[r][c].type === "EMPTY" && isUnlocked(r)) {
         setUpgradeCoin({ pos: gridToPos(r, c, selectedFeatures), color: armedColor });
         setArmedColor(null);
       }
@@ -549,6 +562,8 @@ export default function CombinationFeature({
     lastSnapshot.current = afterSnap;
  
     setSpinsLeft(hasNewUnlocked ? MAX_SPINS : spinsLeft - 1);
+    // The spin has completed: rows whose coin quota was met now actually open.
+    if (isTwr) setCommittedFUnlock(liveFUnlock);
   };
  
   const handleReset = () => {
@@ -580,6 +595,7 @@ export default function CombinationFeature({
     setBlueCoinIdx(0);
     setPurpleCoinIdx(0);
     setAbsorbed({ red: 0, blue: 0, purple: 0, unlock: 0 });
+    setCommittedFUnlock(computeUnlockState(g).fUnlocked);
     prevFUnlock.current = ROWS_LOCKED;
     const snap = new Set<number>();
     g.forEach((row, r) => row.forEach((cell, c) => {
@@ -907,7 +923,7 @@ export default function CombinationFeature({
           {isTwr && (
             <div className="flex flex-col gap-[2px]">
               {Array.from({ length: ROWS }, (_, r) => {
-                const locked    = !isUnlocked(r);
+                const locked    = r < liveFUnlock;   // ✓ as soon as the quota is met
                 const isInitDiv = r === ROWS_LOCKED;
                 return (
                   <div key={r}>
