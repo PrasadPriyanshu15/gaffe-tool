@@ -110,6 +110,25 @@ function rebuildZonesFromUnlocked(
   });
 }
  
+/**
+ * Rebuild zones for a new unlock boundary while keeping zones that were already
+ * running at their remaining charges. A zone made purely of previously-active
+ * anchors resumes at the smallest remaining charge; any zone containing a
+ * freshly-activated anchor starts at full charges.
+ */
+function rebuildKeepingCharges(
+  grid: ComboCell[][], fUnlock: number, rows: number, cols: number,
+  nextId: () => string, prevZones: Zone[]
+): Zone[] {
+  const prevCharges = new Map<string, number>();
+  prevZones.forEach(z => z.anchors.forEach(([ar, ac]) => prevCharges.set(`${ar},${ac}`, z.charges)));
+  return rebuildZonesFromUnlocked(grid, fUnlock, rows, cols, nextId).map(z => {
+    const known = z.anchors.map(([ar, ac]) => prevCharges.get(`${ar},${ac}`));
+    if (known.some(k => k === undefined)) return z;
+    return { ...z, charges: Math.min(...(known as number[])) };
+  });
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function CombinationFeature({
   selectedFeatures, baseCoins, carriedCoins, carriedUnlockBonus, carriedCoinIdx, onSpin, onReset, onUpgrade,
@@ -239,22 +258,15 @@ export default function CombinationFeature({
   }, [JSON.stringify(baseCoins), JSON.stringify(carriedCoins), JSON.stringify(selectedFeatures), JSON.stringify(carriedCoinIdx)]);
  
   // ── Derived: unlock state (fixed-point, matches standalone Tower) ─────────
-  // A red/purple UPGRADE coin sitting in an unlocked row has landed, so it
-  // counts toward row-unlock progress just like a normal coin — even though it
-  // is never written into the grid and vanishes on the next spin. Gate the
-  // "is it in an unlocked row?" test on the grid+absorbed boundary (without the
-  // upgrade coin) to avoid a self-referential loop, exactly as standalone Tower.
+  // An UPGRADE coin never counts toward row-unlock progress.
   //
   // Two boundaries: `liveFUnlock` reflects every coin placed so far (drives the
   // green ✓ / hint so the user sees a row earned its coins), while `fUnlock`
   // is the COMMITTED boundary, frozen at the last spin. In the real game a row
   // only opens after the spin that lands its coins completes, so all gaffe
   // logic (locked-row coin rules, upgrade placement, absorption) uses `fUnlock`.
-  const upgradeInUnlockedRow =
-    isTwr && !!upgradeCoin &&
-    (upgradeCoin.pos % ROWS_TOTAL) >= committedFUnlock;
   const { fUnlocked: liveFUnlock, totalUnlockedCoins } = isTwr
-    ? computeUnlockState(grid, absorbed.unlock + (upgradeInUnlockedRow ? 1 : 0))
+    ? computeUnlockState(grid, absorbed.unlock)
     : { fUnlocked: 0, totalUnlockedCoins: 0 };
   const fUnlock = isTwr ? committedFUnlock : 0;
   const hint = isTwr ? unlockHint(totalUnlockedCoins) : null;
@@ -269,8 +281,7 @@ export default function CombinationFeature({
     if (fUnlock < prevFUnlock.current) {
       // At least one new row just became unlocked
       zoneCounter.current = 0;
-      const newZones = rebuildZonesFromUnlocked(grid, fUnlock, ROWS, COLS, nextId);
-      setZones(newZones);
+      setZones(rebuildKeepingCharges(grid, fUnlock, ROWS, COLS, nextId, zones));
     }
     prevFUnlock.current = fUnlock;
   }, [fUnlock]);
@@ -482,8 +493,8 @@ export default function CombinationFeature({
       // already includes the bonus seeded on entry), coins swallowed this spin,
       // and the landed-but-vanished upgrade coin itself. Without Tower every
       // position is always-unlocked, so the upgrade coin always counts.
-      const upgradeCredit = isTwr ? (upgradeInUnlockedRow ? 1 : 0) : 1;
-      const forwardBonus  = absorbed.unlock + absThisSpin + upgradeCredit;
+      // The upgrade coin itself no longer counts toward row-unlock progress.
+      const forwardBonus  = absorbed.unlock + absThisSpin;
       // Forward each color's sequence index INCLUDING this spin's new coin(s)
       // so the upgraded feature resumes the sequence instead of restarting.
       const forwardCoinIdx: CarriedCoinIdx = {
@@ -507,7 +518,15 @@ export default function CombinationFeature({
     // skipped by generateComboGaffe's prevSnap.has(pos) guards (reelStops
     // and reelstripCOR_ both no-op for positions still marked "occupied").
     let finalGrid = grid;
-    if (hasZn && zones.length > 0) {
+    // If this spin unlocks a row, purples in it form their zones NOW and absorb
+    // in this same spin, using the post-spin unlock boundary.
+    const spinFUnlock = isTwr ? liveFUnlock : 0;
+    const unlockedThisSpin = hasZn && isTwr && spinFUnlock < fUnlock;
+    const spinZones = unlockedThisSpin
+      ? rebuildKeepingCharges(grid, spinFUnlock, ROWS, COLS, nextId, zones)
+      : zones;
+    const isUnlockedNow = (r: number) => !isTwr || r >= spinFUnlock;
+    if (hasZn && spinZones.length > 0) {
       const ng = grid.map(row => row.map(c => ({ ...c })));
       // Tally coins swallowed this spin — they've already landed, so they must
       // stay counted even though they leave the grid. Colored coins keep counting
@@ -515,11 +534,11 @@ export default function CombinationFeature({
       // too) keeps counting toward tower row-unlock progress (absUnlock), since
       // absorption here only ever happens in unlocked rows.
       let absRed = 0, absBlue = 0, absPurple = 0, absUnlock = 0;
-      const updatedZones = zones
+      const updatedZones = spinZones
         .map(zone => {
           zone.cells.forEach(([zr, zc]) => {
             // Skip if this zone cell is in a locked row
-            if (!isUnlocked(zr)) return;
+            if (!isUnlockedNow(zr)) return;
             const isAnchor = zone.anchors.some(([ar, ac]) => ar === zr && ac === zc);
             if (!isAnchor && ng[zr][zc].type !== "EMPTY") {
               const t = ng[zr][zc].type;
