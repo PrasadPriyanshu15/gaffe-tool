@@ -65,14 +65,8 @@ export default function TowerFeature({ baseCoins, onSpin, onReset, onUpgrade }: 
   }, [JSON.stringify(baseCoins)]);
  
   // ── Derived ──────────────────────────────────────────────────────────────
-  // A red/purple UPGRADE coin sitting in an unlocked row has landed, so it
-  // counts toward row-unlock progress just like a normal coin — even though it
-  // is never written into the grid and vanishes on the next spin. Gate on the
-  // grid-only unlock boundary to avoid a self-referential loop.
-  const upgradeInUnlockedRow =
-    !!upgradeCoin && (upgradeCoin.pos % ROWS_TOTAL) >= computeUnlockState(grid).fUnlocked;
-  const { fUnlocked: fUnlock, totalUnlockedCoins } =
-    computeUnlockState(grid, upgradeInUnlockedRow ? 1 : 0);
+  // An UPGRADE coin never counts toward row-unlock progress.
+  const { fUnlocked: fUnlock, totalUnlockedCoins } = computeUnlockState(grid);
   const hint     = unlockHint(totalUnlockedCoins);
   const blueUsed = countBlue(grid);
  
@@ -199,10 +193,8 @@ export default function TowerFeature({ baseCoins, onSpin, onReset, onUpgrade }: 
     onSpin(generateTowerGaffe(grid, prevSnap, eReelPos, blueCoinIdx, upgradeCoin));
 
     // An upgrade coin landed this spin → carry the full grid forward and switch
-    // to the upgraded combination view (the upgrade coin itself vanishes). A
-    // colored upgrade coin that landed in an unlocked row has counted toward
-    // row-unlock progress; carry that +1 credit forward so the row stays
-    // unlocked in the combination (the coin is gone, its credit is not).
+    // to the upgraded combination view (the upgrade coin itself vanishes and
+    // earns no row-unlock credit).
     if (upgradeCoin && onUpgrade) {
       // Forward the BLUE sequence index INCLUDING this spin's new blue coin(s)
       // (setBlueCoinIdx above has only scheduled the update, so `blueCoinIdx`
@@ -211,7 +203,7 @@ export default function TowerFeature({ baseCoins, onSpin, onReset, onUpgrade }: 
       onUpgrade(
         UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color],
         buildCarried(grid),
-        upgradeInUnlockedRow ? 1 : 0,
+        0,
         { red: 0, blue: blueCoinIdx + newBlueCount, purple: 0 },
       );
     }
