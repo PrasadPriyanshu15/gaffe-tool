@@ -39,6 +39,15 @@ function cellInZone(r: number, c: number, zones: Zone[]): boolean {
   return zones.some(z => z.cells.some(([zr, zc]) => zr === r && zc === c));
 }
  
+/** Number of coins that were present in `before` but are EMPTY in `after`. */
+function countAbsorbed(before: ZoneCell[][], after: ZoneCell[][]): number {
+  let n = 0;
+  before.forEach((row, r) => row.forEach((cell, c) => {
+    if (cell.type !== "EMPTY" && after[r][c].type === "EMPTY") n++;
+  }));
+  return n;
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function ZoneFeature({ baseCoins, onSpin, onReset, onUpgrade }: Props) {
   const [isOpen,        setIsOpen]        = useState(true);
@@ -49,6 +58,9 @@ export default function ZoneFeature({ baseCoins, onSpin, onReset, onUpgrade }: P
   const [eReelPos,      setEReelPos]      = useState<EReelSetting | null>(null);
   const [upgradeCoin,   setUpgradeCoin]   = useState<UpgradeCoin | null>(null);
   const [armedColor,    setArmedColor]    = useState<UpgradeColor | null>(null);
+  // Coins swallowed by zones on earlier spins. They already landed, so they
+  // still count toward Tower row-unlock progress if we upgrade to Tower.
+  const [absorbedTotal, setAbsorbedTotal] = useState(0);
   const zoneCounter = useRef(0);
 
   // Features that can still be added via an upgrade coin.
@@ -69,6 +81,7 @@ export default function ZoneFeature({ baseCoins, onSpin, onReset, onUpgrade }: P
     setEReelPos(null);
     setUpgradeCoin(null);
     setArmedColor(null);
+    setAbsorbedTotal(0);
     zoneCounter.current = 0;
     const snap = new Set<number>();
     g.forEach((row, r) => row.forEach((cell, c) => {
@@ -218,10 +231,11 @@ export default function ZoneFeature({ baseCoins, onSpin, onReset, onUpgrade }: P
       // (ignored otherwise, since only Tower tracks unlock). Forward the PURPLE
       // sequence index INCLUDING this spin's new purple coin(s) so the upgraded
       // feature resumes the sequence instead of restarting at index 0.
+      // Coins absorbed (earlier spins + this one) also count as landed.
       onUpgrade(
         UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color],
         carried,
-        1,
+        absorbedTotal + countAbsorbed(grid, absorbedGrid),
         { red: 0, blue: 0, purple: purpleCoinIdx + newPurpleCount },
       );
       return;
@@ -232,6 +246,8 @@ export default function ZoneFeature({ baseCoins, onSpin, onReset, onUpgrade }: P
  
     // Process zone absorption + charge decrement
     const { grid: newGrid, zones: newZones } = processZoneOnSpin(grid, zones);
+    const absNow = countAbsorbed(grid, newGrid);
+    if (absNow) setAbsorbedTotal(t => t + absNow);
     setGrid(newGrid);
     setZones(newZones);
  
@@ -254,6 +270,7 @@ export default function ZoneFeature({ baseCoins, onSpin, onReset, onUpgrade }: P
     setEReelPos(null);
     setUpgradeCoin(null);
     setArmedColor(null);
+    setAbsorbedTotal(0);
     zoneCounter.current = 0;
     const snap = new Set<number>();
     g.forEach((row, r) => row.forEach((cell, c) => {

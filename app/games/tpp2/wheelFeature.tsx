@@ -196,15 +196,13 @@ export default function WheelFeature({
     // An upgrade coin landed this spin → carry the full grid forward and switch
     // to the upgraded combination view (the upgrade coin itself vanishes).
     if (upgradeCoin && onUpgrade) {
-      // The upgrade coin sits in an always-unlocked row, so it carries +1 toward
-      // tower row-unlock progress if the target combination includes Tower
-      // (ignored otherwise, since only Tower tracks unlock). Forward the RED
-      // sequence index INCLUDING this spin's new red coin(s) so the upgraded
-      // feature resumes the sequence instead of restarting at index 0.
+      // The upgrade coin vanishes and does NOT count toward row-unlock progress.
+      // Forward the RED sequence index INCLUDING this spin's new red coin(s) so
+      // the upgraded feature resumes the sequence instead of restarting at 0.
       onUpgrade(
         UPGRADE_COLOR_TO_FEATURE[upgradeCoin.color],
         buildCarried(grid),
-        1,
+        0,
         { red: redCoinIdx + newRedCount, blue: 0, purple: 0 },
       );
       return;
