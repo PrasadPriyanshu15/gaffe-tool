@@ -93,13 +93,13 @@ type Props = {
 function formatGaffe(gaffe: Record<string, any>): string {
   const parts: string[] = [];
 
-  parts.push(`reelStopPositions: [${gaffe.reelStopPositions.join(",")}]`);
+  parts.push(`reelStopPositions:[${gaffe.reelStopPositions.join(",")}]`);
 
   if (gaffe.scatReplacement?.length > 0)
-    parts.push(`scatReplacement: [${gaffe.scatReplacement.join(",")}]`);
+    parts.push(`scatReplacement:[${gaffe.scatReplacement.join(",")}]`);
 
   if (gaffe.stack)
-    parts.push(`stack: ${gaffe.stack}`);
+    parts.push(`stack:${gaffe.stack}`);
 
   if (gaffe.triggerGrandJackpot) parts.push(`triggerGrandJackpot: true`);
   if (gaffe.triggerMajorJackpot) parts.push(`triggerMajorJackpot: true`);
@@ -107,7 +107,7 @@ function formatGaffe(gaffe: Record<string, any>): string {
   if (gaffe.triggerFeatures === false) {
     parts.push(`triggerFeatures: false`);
   } else if (Array.isArray(gaffe.triggerFeatures) && gaffe.triggerFeatures.length > 0) {
-    parts.push(`triggerFeatures: ${gaffe.triggerFeatures.join(" ")}`);
+    parts.push(`triggerFeatures:${gaffe.triggerFeatures.join(" ")}`);
   }
 
   if (gaffe.landedCoins?.length > 0) {
